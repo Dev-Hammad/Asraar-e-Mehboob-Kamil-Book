@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>Noorani Reader | Smooth Pan & Zoom</title>
+  <title>Noorani Reader | Pan & Zoom + Goto Page</title>
   <style>
     * {
       margin: 0;
@@ -26,18 +26,20 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 8px 18px;
-      background: rgba(20, 18, 16, 0.92);
-      backdrop-filter: blur(8px);
+      padding: 8px 16px;
+      background: rgba(20, 18, 16, 0.94);
+      backdrop-filter: blur(10px);
       border-bottom: 0.5px solid rgba(255, 255, 255, 0.08);
       flex-shrink: 0;
       z-index: 12;
+      gap: 8px;
     }
 
     .top-left, .top-right {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 10px;
+      flex-shrink: 0;
     }
 
     .icon-btn, .page-nav-btn {
@@ -59,8 +61,8 @@
     }
     .page-nav-btn {
       height: 38px;
-      padding: 0 18px;
-      gap: 8px;
+      padding: 0 16px;
+      gap: 6px;
       font-size: 14px;
       letter-spacing: 0.3px;
     }
@@ -73,14 +75,17 @@
       background: rgba(255, 255, 255, 0.08);
       backdrop-filter: blur(4px);
       border-radius: 30px;
-      padding: 0 18px;
+      padding: 0 16px;
       height: 40px;
       display: flex;
       align-items: center;
-      gap: 6px;
-      font-size: 14px;
+      gap: 5px;
+      font-size: 13px;
       color: rgba(255, 255, 255, 0.65);
       border: 0.5px solid rgba(255, 255, 255, 0.1);
+      flex-shrink: 1;
+      min-width: 90px;
+      justify-content: center;
     }
     .page-pill strong {
       color: #f9e7c2;
@@ -89,7 +94,7 @@
       font-variant-numeric: tabular-nums;
     }
 
-    /* ===== SCROLL AREA — FULL PAN/ZONE with reliable X/Y ===== */
+    /* ===== SCROLL AREA — FULL PAN/ZONE ===== */
     #scrollArea {
       flex: 1;
       overflow: auto;
@@ -100,10 +105,8 @@
       padding: 20px 16px;
       background: #141210;
       scroll-behavior: smooth;
-      /* ensures content can expand freely */
     }
 
-    /* Image container wrapper for perfect scroll sizing */
     .image-wrapper {
       display: inline-block;
       min-width: 100%;
@@ -121,17 +124,17 @@
       pointer-events: auto;
     }
 
-    /* ===== BOTTOM CONTROLS (subtle but functional) ===== */
+    /* ===== BOTTOM CONTROLS - FULLY RESPONSIVE (GOTO ALWAYS VISIBLE) ===== */
     #bottomBar {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 8px 18px 18px;
-      background: rgba(20, 18, 16, 0.92);
-      backdrop-filter: blur(6px);
+      padding: 10px 16px 18px;
+      background: rgba(20, 18, 16, 0.94);
+      backdrop-filter: blur(8px);
       border-top: 0.5px solid rgba(255, 255, 255, 0.05);
       flex-shrink: 0;
-      gap: 16px;
+      gap: 12px;
       flex-wrap: wrap;
     }
 
@@ -151,6 +154,7 @@
       color: #e0d6c8;
       font-variant-numeric: tabular-nums;
       letter-spacing: 0.3px;
+      white-space: nowrap;
     }
 
     input[type="range"] {
@@ -173,26 +177,28 @@
       border: 1px solid rgba(255,255,200,0.6);
     }
 
+    /* Goto page control - ALWAYS VISIBLE & MOBILE FRIENDLY */
     .goto-strip {
       display: flex;
       align-items: center;
       gap: 8px;
-      background: rgba(0, 0, 0, 0.25);
+      background: rgba(0, 0, 0, 0.35);
       padding: 4px 8px 4px 12px;
       border-radius: 48px;
       backdrop-filter: blur(4px);
+      flex-shrink: 0;
     }
     .goto-strip input {
-      width: 60px;
-      height: 34px;
+      width: 65px;
+      height: 36px;
       border-radius: 40px;
-      background: rgba(255, 255, 255, 0.1);
-      border: 0.5px solid rgba(255, 255, 255, 0.2);
+      background: rgba(255, 255, 255, 0.12);
+      border: 0.5px solid rgba(255, 255, 255, 0.25);
       color: #fef3e2;
       text-align: center;
       font-size: 14px;
       font-weight: 500;
-      padding: 0 6px;
+      padding: 0 8px;
       font-variant-numeric: tabular-nums;
     }
     .goto-strip input:focus {
@@ -201,8 +207,8 @@
       border-color: #f5d742;
     }
     .goto-strip button {
-      height: 34px;
-      padding: 0 18px;
+      height: 36px;
+      padding: 0 16px;
       border-radius: 40px;
       font-size: 13px;
       font-weight: 600;
@@ -212,6 +218,7 @@
       cursor: pointer;
       transition: 0.1s linear;
       letter-spacing: 0.3px;
+      white-space: nowrap;
     }
     .goto-strip button:active {
       transform: scale(0.95);
@@ -219,8 +226,8 @@
     }
 
     .zoom-strip .icon-btn {
-      width: 32px;
-      height: 32px;
+      width: 34px;
+      height: 34px;
       background: rgba(255, 255, 255, 0.1);
       font-size: 18px;
       font-weight: bold;
@@ -231,7 +238,7 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      background: rgba(0, 0, 0, 0.8);
+      background: rgba(0, 0, 0, 0.85);
       backdrop-filter: blur(12px);
       border-radius: 44px;
       padding: 12px 24px;
@@ -243,6 +250,7 @@
       z-index: 60;
       border: 0.5px solid rgba(245,215,130,0.3);
       font-weight: 500;
+      white-space: nowrap;
     }
     .spin {
       width: 18px;
@@ -300,18 +308,45 @@
       animation: hintFade 4s ease forwards;
     }
 
-    @media (max-width: 560px) {
+    /* ===== RESPONSIVE: GOTO PAGE ALWAYS VISIBLE, ADJUST FOR SMALL SCREENS ===== */
+    @media (max-width: 640px) {
       .page-nav-btn span { display: none; }
-      .page-nav-btn { padding: 0 14px; }
-      .zoom-strip { flex: 1; }
-      .goto-strip input { width: 50px; }
-      #bottomBar { padding: 8px 12px 14px; gap: 8px; }
-      .page-pill { padding: 0 12px; height: 36px; font-size: 12px; }
-    }
-    @media (max-width: 460px) {
+      .page-nav-btn { padding: 0 12px; }
+      .zoom-strip { flex: 1; min-width: 120px; }
+      .goto-strip input { width: 55px; height: 34px; font-size: 13px; }
+      .goto-strip button { padding: 0 12px; height: 34px; font-size: 12px; }
       .zoom-label { display: none; }
-      .zoom-strip { min-width: auto; }
     }
+
+    @media (max-width: 520px) {
+      #bottomBar { padding: 8px 12px 14px; gap: 8px; }
+      .zoom-strip { gap: 6px; }
+      .zoom-strip .icon-btn { width: 32px; height: 32px; }
+      .goto-strip { padding: 3px 6px 3px 10px; }
+      .goto-strip input { width: 50px; height: 32px; }
+      .goto-strip button { padding: 0 10px; height: 32px; }
+      .page-pill { padding: 0 10px; height: 36px; font-size: 11px; min-width: 75px; }
+      .page-pill strong { font-size: 14px; }
+      .top-left, .top-right { gap: 6px; }
+      .icon-btn { width: 34px; height: 34px; }
+    }
+
+    @media (max-width: 430px) {
+      /* keep goto visible - just shrink further */
+      .goto-strip input { width: 45px; }
+      .goto-strip button { padding: 0 8px; }
+      .zoom-strip { min-width: 100px; }
+      #scrollArea { padding: 12px 12px; }
+    }
+
+    @media (max-width: 380px) {
+      .zoom-strip { display: flex; }
+      .zoom-strip .icon-btn { width: 28px; height: 28px; font-size: 16px; }
+      input[type="range"] { min-width: 60px; }
+      .goto-strip input { width: 42px; font-size: 12px; }
+      .goto-strip button { padding: 0 6px; font-size: 11px; }
+    }
+
     input[type=number]::-webkit-inner-spin-button,
     input[type=number]::-webkit-outer-spin-button { display: none; }
   </style>
@@ -357,7 +392,7 @@
     <span class="zoom-label" id="zoomLabel">48%</span>
   </div>
   <div class="goto-strip">
-    <input type="number" id="gotoInput" placeholder="Page" min="1" max="934">
+    <input type="number" id="gotoInput" placeholder="Pg" min="1" max="934" inputmode="numeric">
     <button id="gotoBtn">Go</button>
   </div>
 </div>
@@ -366,7 +401,7 @@
 <div id="toast"></div>
 
 <script>
-  // ================= FIXED SCROLL: X & Y AXIS COMPLETE =================
+  // ================= ROBUST READER WITH ALWAYS-VISIBLE GOTO =================
   const ARCHIVE_BASE = "https://ia803205.us.archive.org/view_archive.php?archive=/29/items/Asraar-e-Mehboob-Kamil._20260528/Asraar%20e%20Mehboob%20Kamil.%20%D8%A7%D8%B3%D8%B1%D8%A7%D8%B1%20%D9%85%D8%AD%D8%A8%D9%88%D8%A8%20%DA%A9%D8%A7%D9%85%D9%84_jp2.zip&file=Asraar%20e%20Mehboob%20Kamil.%20%D8%A7%D8%B3%D8%B1%D8%A7%D8%B1%20%D9%85%D8%AD%D8%A8%D9%88%D8%A8%20%DA%A9%D8%A7%D9%85%D9%84_jp2%2FAsraar%20e%20Mehboob%20Kamil.%20%D8%A7%D8%B3%D8%B1%D8%A7%D8%B1%20%D9%85%D8%AD%D8%A8%D9%88%D8%A8%20%DA%A9%D8%A7%D9%85%D9%84_";
   const TOTAL_PAGES = 934;
   let currentIdx = 0;
@@ -407,7 +442,6 @@
     return ARCHIVE_BASE + padded + ".jp2&ext=jpg";
   }
 
-  // Sync zoom slider & label
   function syncZoomControls() {
     const minZ = 0.28, maxZ = 3.4;
     let t = (zoomLevel - minZ) / (maxZ - minZ);
@@ -416,8 +450,7 @@
     zoomLabel.textContent = Math.round(zoomLevel * 100) + '%';
   }
 
-  // CRITICAL FIX: apply zoom & ensure scroll area dimensions expand correctly
-  // We set image dimensions and also update wrapper min dimensions so that scrollbars reflect full content.
+  // Apply zoom and ensure wrapper dimensions for proper X/Y scrolling
   function applyZoomAndUpdateScroll() {
     if (!naturalWidth || !naturalHeight) return;
     const newWidth = naturalWidth * zoomLevel;
@@ -425,7 +458,7 @@
     pageImg.style.width = newWidth + 'px';
     pageImg.style.height = newHeight + 'px';
     
-    // Force wrapper to match image size exactly so scrollArea gets correct scrollWidth/Height
+    // wrapper dimensions = image dimensions → scrollbars appear correctly
     imageWrapper.style.width = newWidth + 'px';
     imageWrapper.style.height = newHeight + 'px';
     imageWrapper.style.display = 'block';
@@ -434,7 +467,6 @@
     try { localStorage.setItem('noorani_zoom', zoomLevel); } catch(e) {}
   }
 
-  // Fit to screen: calculates ideal zoom and also resets scroll position
   function calculateFitZoom() {
     if (!naturalWidth || !naturalHeight) return 0.48;
     const containerRect = scrollContainer.getBoundingClientRect();
@@ -449,7 +481,6 @@
     const newZoom = calculateFitZoom();
     zoomLevel = newZoom;
     applyZoomAndUpdateScroll();
-    // Reset pan position perfectly to top-left (X and Y axis both zero)
     scrollContainer.scrollTop = 0;
     scrollContainer.scrollLeft = 0;
     showToast("✓ Fit to screen", 700);
@@ -471,7 +502,6 @@
     showToast(`${Math.round(zoomLevel*100)}%`, 400);
   }
 
-  // Preload nearby pages
   function preloadNearby(current) {
     const pages = [current+1, current+2, current-1, current-2].filter(p => p>=0 && p<TOTAL_PAGES);
     for (let p of pages) {
@@ -481,13 +511,11 @@
         img.src = getImageUrl(p);
       }
     }
-    // clean far cache
     Object.keys(imgCache).forEach(k => {
       if (Math.abs(parseInt(k) - current) > 7 && parseInt(k) !== current) delete imgCache[k];
     });
   }
 
-  // Core loader with retry & cache
   function loadPageByIndex(newIndex) {
     if (newIndex < 0 || newIndex >= TOTAL_PAGES) {
       showToast(newIndex < 0 ? "📖 First page" : "📘 Last page", 900);
@@ -495,7 +523,6 @@
     }
     if (isLoading) { showToast("Please wait...", 500); return; }
     
-    // If cached and ready
     if (imgCache[newIndex] && imgCache[newIndex].complete && imgCache[newIndex].naturalWidth > 0) {
       const cached = imgCache[newIndex];
       applyLoadedImage(cached, newIndex);
@@ -533,23 +560,20 @@
     pageNumSpan.textContent = currentIdx + 1;
     gotoInput.value = currentIdx + 1;
     
-    // Apply current zoom level (must enforce correct wrapper + image sizes)
     applyZoomAndUpdateScroll();
     
-    // CRITICAL: Reset scroll exactly to origin after page change (X=0, Y=0)
+    // Reset scroll to origin (top-left) for new page
     scrollContainer.scrollLeft = 0;
     scrollContainer.scrollTop = 0;
     
-    // Save current page
     try { localStorage.setItem('noorani_last_page', currentIdx); } catch(e) {}
     preloadNearby(currentIdx);
     
-    // one-time hint for panning
     if (!localStorage.getItem('nr_pan_hint_v2')) {
       localStorage.setItem('nr_pan_hint_v2', '1');
       const hintDiv = document.createElement('div');
       hintDiv.id = 'hint';
-      hintDiv.textContent = '🖱️ Drag or touch to pan X/Y · Pinch to zoom 🖱️';
+      hintDiv.textContent = '🖱️ Drag to pan X/Y · Pinch to zoom 🖱️';
       document.body.appendChild(hintDiv);
       setTimeout(() => hintDiv.remove(), 4200);
     }
@@ -562,45 +586,37 @@
     loadPageByIndex(p - 1);
   }
 
-  // ========== ENSURE THAT X AND Y SCROLLING ALWAYS WORKS AFTER ZOOM ==========
-  // We use a ResizeObserver to make sure scroll dimensions are recalculated if needed
-  // but applying width/height to wrapper directly triggers browser layout.
-  // Also, on zoom slider changes, we reapply and scrollbars update automatically.
-  // Additionally, we attach an event to re-sync wrapper on any image load.
+  // Event: zoom slider
+  zoomSlider.addEventListener('input', (e) => {
+    const minZ = 0.28, maxZ = 3.4;
+    const t = e.target.value / 100;
+    zoomLevel = minZ + t * (maxZ - minZ);
+    applyZoomAndUpdateScroll();
+  });
   
-  // Extra insurance: after image loads fully, recalc wrapper dimensions once more.
+  // Image reload insurance
   pageImg.addEventListener('load', () => {
     if (naturalWidth && naturalHeight) {
       applyZoomAndUpdateScroll();
     }
   });
   
-  // For zoom slider:
-  zoomSlider.addEventListener('input', (e) => {
-    const minZ = 0.28, maxZ = 3.4;
-    const t = e.target.value / 100;
-    zoomLevel = minZ + t * (maxZ - minZ);
-    applyZoomAndUpdateScroll();
-    // No automatic reset of scroll position to keep current view, user can pan.
-  });
-  
-  // ========== KEYBOARD PAN & PAGE TURN ==========
+  // Keyboard: pan X/Y + page turns + zoom
   document.addEventListener('keydown', (e) => {
     if (document.activeElement?.tagName === 'INPUT') return;
     const key = e.key;
-    // Pan X/Y via arrow keys (complete X and Y axis)
     if (key === 'ArrowLeft') {
       e.preventDefault();
-      scrollContainer.scrollBy({ left: -90, behavior: 'smooth' });
+      scrollContainer.scrollBy({ left: -85, behavior: 'smooth' });
     } else if (key === 'ArrowRight') {
       e.preventDefault();
-      scrollContainer.scrollBy({ left: 90, behavior: 'smooth' });
+      scrollContainer.scrollBy({ left: 85, behavior: 'smooth' });
     } else if (key === 'ArrowUp') {
       e.preventDefault();
-      scrollContainer.scrollBy({ top: -90, behavior: 'smooth' });
+      scrollContainer.scrollBy({ top: -85, behavior: 'smooth' });
     } else if (key === 'ArrowDown') {
       e.preventDefault();
-      scrollContainer.scrollBy({ top: 90, behavior: 'smooth' });
+      scrollContainer.scrollBy({ top: 85, behavior: 'smooth' });
     } else if (key === '+' || key === '=') {
       e.preventDefault();
       zoomIn();
@@ -619,7 +635,7 @@
     }
   });
   
-  // Mouse wheel with shift for horizontal pan (X axis)
+  // Horizontal pan with Shift + wheel
   scrollContainer.addEventListener('wheel', (e) => {
     if (e.shiftKey) {
       e.preventDefault();
@@ -630,7 +646,7 @@
     }
   }, { passive: false });
   
-  // Two-finger pinch for zoom (touch)
+  // Pinch zoom on touch
   let initialPinch = 0;
   let startZoom = zoomLevel;
   scrollContainer.addEventListener('touchstart', (e) => {
@@ -661,17 +677,12 @@
   
   scrollContainer.addEventListener('touchend', () => { initialPinch = 0; });
   
-  // Also, to guarantee that wrapper dimensions always sync after dynamic updates, call applyZoom whenever needed
-  // Additionally, when the window resizes we ensure fit is not forced but we keep zoom, yet scroll remains functional.
+  // resize: keep zoom consistent
   window.addEventListener('resize', () => {
-    if (naturalWidth) {
-      // keep current zoom, but if image is too small no side effects
-      // just to be safe, ensure wrapper dimensions reflect current zoom
-      applyZoomAndUpdateScroll();
-    }
+    if (naturalWidth) applyZoomAndUpdateScroll();
   });
   
-  // ====== EVENT LISTENERS FOR BUTTONS ======
+  // BUTTONS
   prevBtn.addEventListener('click', () => loadPageByIndex(currentIdx - 1));
   nextBtn.addEventListener('click', () => loadPageByIndex(currentIdx + 1));
   fitBtn.addEventListener('click', fitToScreen);
@@ -680,7 +691,7 @@
   gotoBtn.addEventListener('click', () => goToPage(gotoInput.value));
   gotoInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') goToPage(gotoInput.value); });
   
-  // ====== INITIAL SETUP WITH PERSISTENCE ======
+  // INIT
   function init() {
     totalSpan.textContent = TOTAL_PAGES;
     try {
