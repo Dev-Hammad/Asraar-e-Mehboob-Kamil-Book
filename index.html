@@ -1,803 +1,343 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Noorani Reader | Pure Reading Experience</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Noorani Reader</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body { background: #1a1714; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
 
-        body {
-            background: #f0ebe2;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
-            overflow: hidden;
-            position: fixed;
-            width: 100%;
-            height: 100%;
-        }
+    #topBar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 16px;
+      background: #1a1714;
+      border-bottom: 0.5px solid rgba(255,255,255,0.08);
+      flex-shrink: 0; z-index: 10;
+    }
+    .top-left, .top-right { display: flex; align-items: center; gap: 8px; }
 
-        .scroll-container {
-            width: 100%;
-            height: 100%;
-            overflow: auto;
-            -webkit-overflow-scrolling: touch;
-            background: #f0ebe2;
-            position: relative;
-        }
+    .icon-btn {
+      width: 36px; height: 36px; border-radius: 8px;
+      background: rgba(255,255,255,0.07); border: 0.5px solid rgba(255,255,255,0.12);
+      color: rgba(255,255,255,0.75); font-size: 18px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.15s, transform 0.1s;
+    }
+    .icon-btn:active { background: rgba(255,255,255,0.15); transform: scale(0.93); }
 
-        .image-wrapper {
-            display: inline-block;
-            background: #f0ebe2;
-            padding: 20px;
-            min-width: 100%;
-            min-height: 100%;
-        }
+    .page-nav-btn {
+      height: 36px; padding: 0 16px; border-radius: 8px;
+      background: rgba(255,255,255,0.07); border: 0.5px solid rgba(255,255,255,0.12);
+      color: rgba(255,255,255,0.8); font-size: 14px; font-weight: 500; cursor: pointer;
+      display: flex; align-items: center; gap: 6px; transition: background 0.15s, transform 0.1s;
+    }
+    .page-nav-btn:active { background: rgba(255,255,255,0.18); transform: scale(0.96); }
 
-        #pageImage {
-            display: block;
-            max-width: none;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.02);
-            border-radius: 4px;
-            background: #fffef8;
-            transition: width 0.08s ease-out, height 0.08s ease-out;
-            will-change: width, height;
-        }
+    .page-pill {
+      background: rgba(255,255,255,0.1); border: 0.5px solid rgba(255,255,255,0.15);
+      border-radius: 8px; padding: 0 14px; height: 36px;
+      display: flex; align-items: center; gap: 6px; color: rgba(255,255,255,0.6); font-size: 13px;
+    }
+    .page-pill strong { color: rgba(255,255,255,0.9); font-weight: 500; font-size: 14px; font-variant-numeric: tabular-nums; }
 
-        /* Controls - ONLY on double tap */
-        .controls {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: linear-gradient(to top, rgba(30, 27, 24, 0.95) 0%, rgba(30, 27, 24, 0.85) 100%);
-            backdrop-filter: blur(20px);
-            padding: 12px 16px 20px 16px;
-            z-index: 1000;
-            border-top: 0.5px solid rgba(255, 215, 150, 0.2);
-            transition: transform 0.3s ease;
-            transform: translateY(100%);
-            pointer-events: auto;
-        }
+    #scrollArea {
+      flex: 1; overflow: auto; display: flex; align-items: flex-start; justify-content: center;
+      -webkit-overflow-scrolling: touch; padding: 20px 16px; background: #1a1714;
+    }
 
-        .controls.visible {
-            transform: translateY(0);
-        }
+    #pageImg {
+      display: block; border-radius: 6px; max-width: none;
+      box-shadow: 0 0 0 0.5px rgba(255,255,255,0.06), 0 8px 40px rgba(0,0,0,0.6);
+      transition: width 0.06s, height 0.06s; will-change: width, height; user-select: none;
+    }
 
-        .controls-row {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 12px;
-            margin-bottom: 12px;
-            flex-wrap: wrap;
-        }
+    #bottomBar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 16px 20px; background: #1a1714;
+      border-top: 0.5px solid rgba(255,255,255,0.08);
+      flex-shrink: 0; gap: 12px;
+    }
 
-        .controls-row-secondary {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
+    .zoom-strip { display: flex; align-items: center; gap: 8px; flex: 1; }
+    .zoom-label { font-size: 12px; color: rgba(255,255,255,0.45); font-variant-numeric: tabular-nums; white-space: nowrap; min-width: 36px; text-align: right; }
 
-        .ctrl-btn {
-            background: rgba(255, 245, 235, 0.12);
-            border: none;
-            color: #f5e6d3;
-            font-size: 14px;
-            font-weight: 500;
-            padding: 10px 18px;
-            border-radius: 40px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            font-family: inherit;
-            letter-spacing: 0.3px;
-            backdrop-filter: blur(4px);
-            min-width: 44px;
-            touch-action: manipulation;
-        }
+    input[type=range] {
+      flex: 1; height: 4px; -webkit-appearance: none; appearance: none;
+      background: rgba(255,255,255,0.15); border-radius: 4px; cursor: pointer;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none; width: 18px; height: 18px;
+      background: #fff; border-radius: 50%; cursor: pointer; box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+    }
 
-        .ctrl-btn:active {
-            background: rgba(255, 200, 130, 0.35);
-            transform: scale(0.96);
-        }
+    .goto-strip { display: flex; align-items: center; gap: 6px; }
+    .goto-strip input {
+      width: 54px; height: 32px; border-radius: 7px;
+      background: rgba(255,255,255,0.08); border: 0.5px solid rgba(255,255,255,0.15);
+      color: rgba(255,255,255,0.9); text-align: center; font-size: 13px; font-weight: 500; padding: 0 4px;
+    }
+    .goto-strip input:focus { outline: none; background: rgba(255,255,255,0.14); border-color: rgba(255,255,255,0.35); }
+    .goto-strip button {
+      height: 32px; padding: 0 12px; border-radius: 7px; font-size: 12px; font-weight: 500;
+      background: rgba(255,255,255,0.12); border: 0.5px solid rgba(255,255,255,0.2);
+      color: rgba(255,255,255,0.85); cursor: pointer; transition: background 0.15s;
+    }
+    .goto-strip button:active { background: rgba(255,255,255,0.22); }
 
-        .page-indicator {
-            background: rgba(0, 0, 0, 0.5);
-            color: #ffefcf;
-            padding: 10px 20px;
-            border-radius: 40px;
-            font-family: monospace;
-            font-weight: 600;
-            font-size: 14px;
-            letter-spacing: 0.5px;
-        }
+    #loader {
+      position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%);
+      background: rgba(0,0,0,0.7); border-radius: 12px; padding: 14px 24px;
+      color: rgba(255,255,255,0.8); font-size: 13px; backdrop-filter: blur(8px);
+      display: none; align-items: center; gap: 10px; z-index: 50;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spin { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.2); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; }
 
-        .goto-wrapper {
-            display: inline-flex;
-            align-items: center;
-            background: rgba(0, 0, 0, 0.45);
-            border-radius: 40px;
-            padding: 3px 5px 3px 16px;
-            gap: 6px;
-        }
+    #toast {
+      position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+      background: rgba(0,0,0,0.75); color: rgba(255,255,255,0.9); backdrop-filter: blur(12px);
+      padding: 7px 18px; border-radius: 40px; font-size: 13px; z-index: 100;
+      pointer-events: none; opacity: 0; transition: opacity 0.2s; white-space: nowrap;
+    }
+    #toast.show { opacity: 1; }
 
-        .goto-wrapper input {
-            background: rgba(255, 245, 225, 0.2);
-            border: none;
-            color: #fff6ea;
-            font-size: 14px;
-            width: 60px;
-            padding: 7px 8px;
-            border-radius: 30px;
-            text-align: center;
-            font-family: monospace;
-            font-weight: 600;
-        }
+    #hint {
+      position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%);
+      background: rgba(0,0,0,0.75); color: rgba(255,255,255,0.85); backdrop-filter: blur(12px);
+      padding: 12px 24px; border-radius: 40px; font-size: 13px; z-index: 90;
+      pointer-events: none; text-align: center; line-height: 1.7;
+      animation: hintFade 4s ease forwards;
+    }
+    @keyframes hintFade { 0%,60% { opacity:1; } 100% { opacity:0; visibility:hidden; } }
 
-        .goto-wrapper input:focus {
-            outline: none;
-            background: rgba(255, 230, 180, 0.45);
-        }
-
-        .goto-wrapper button {
-            background: #cd7a32;
-            padding: 6px 14px;
-            font-size: 13px;
-            margin: 0;
-        }
-
-        .zoom-control {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            background: rgba(0, 0, 0, 0.45);
-            padding: 5px 14px;
-            border-radius: 40px;
-        }
-
-        .zoom-control span {
-            font-size: 13px;
-            color: #ffe0bc;
-        }
-
-        #zoomSlider {
-            width: 110px;
-            height: 3px;
-            -webkit-appearance: none;
-            background: rgba(255, 220, 150, 0.4);
-            border-radius: 3px;
-        }
-
-        #zoomSlider::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 15px;
-            height: 15px;
-            background: #ffcd94;
-            border-radius: 50%;
-            cursor: pointer;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
-        }
-
-        .zoom-percent {
-            min-width: 45px;
-            text-align: center;
-            background: rgba(0, 0, 0, 0.5);
-            padding: 5px 10px;
-            border-radius: 30px;
-            font-size: 12px;
-            font-weight: 600;
-            color: #ffe3c2;
-        }
-
-        .icon-btn {
-            background: rgba(255, 245, 235, 0.15);
-            border: none;
-            color: #ffefcf;
-            font-size: 18px;
-            font-weight: 600;
-            width: 38px;
-            height: 38px;
-            border-radius: 38px;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .icon-btn:active {
-            background: rgba(255, 200, 130, 0.4);
-            transform: scale(0.94);
-        }
-
-        .loading-slim {
-            position: fixed;
-            bottom: 100px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.75);
-            backdrop-filter: blur(12px);
-            padding: 6px 18px;
-            border-radius: 40px;
-            z-index: 2000;
-            display: none;
-            align-items: center;
-            gap: 8px;
-            pointer-events: none;
-        }
-
-        .loading-slim span {
-            color: #ffefcf;
-            font-size: 12px;
-            font-weight: 500;
-        }
-
-        .loading-dot {
-            width: 8px;
-            height: 8px;
-            background: #ffcd94;
-            border-radius: 50%;
-            animation: pulse 0.8s ease infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 0.4; transform: scale(0.8); }
-            50% { opacity: 1; transform: scale(1.2); }
-        }
-
-        .toast-msg {
-            position: fixed;
-            bottom: 100px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #1e1915e6;
-            color: #ffe6cd;
-            padding: 6px 18px;
-            border-radius: 40px;
-            font-size: 12px;
-            font-weight: 500;
-            z-index: 1500;
-            white-space: nowrap;
-            pointer-events: none;
-            backdrop-filter: blur(12px);
-        }
-
-        /* Double tap hint - shows only once */
-        .double-tap-hint {
-            position: fixed;
-            bottom: 30%;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.75);
-            backdrop-filter: blur(12px);
-            padding: 12px 24px;
-            border-radius: 48px;
-            color: #ffefcf;
-            font-size: 14px;
-            font-weight: 500;
-            z-index: 1100;
-            pointer-events: none;
-            white-space: nowrap;
-            animation: fadeOut 4s ease forwards;
-            text-align: center;
-        }
-
-        @keyframes fadeOut {
-            0% { opacity: 1; }
-            70% { opacity: 1; }
-            100% { opacity: 0; visibility: hidden; }
-        }
-
-        .swipe-area {
-            position: fixed;
-            top: 0;
-            bottom: 0;
-            width: 12%;
-            z-index: 900;
-            background: transparent;
-        }
-        .swipe-left { left: 0; }
-        .swipe-right { right: 0; }
-
-        @media (max-width: 650px) {
-            .controls { padding: 10px 12px 18px 12px; }
-            .ctrl-btn { padding: 8px 14px; font-size: 13px; }
-            .page-indicator { padding: 8px 14px; font-size: 13px; }
-            .goto-wrapper input { width: 52px; font-size: 13px; padding: 6px 6px; }
-            .goto-wrapper button { padding: 5px 12px; font-size: 12px; }
-            .zoom-control { padding: 4px 12px; gap: 6px; }
-            #zoomSlider { width: 90px; }
-            .zoom-percent { min-width: 40px; font-size: 11px; padding: 4px 8px; }
-            .icon-btn { width: 34px; height: 34px; font-size: 16px; }
-            .image-wrapper { padding: 16px 12px; }
-            .double-tap-hint { font-size: 12px; padding: 10px 20px; white-space: nowrap; }
-        }
-
-        @media (max-width: 500px) {
-            .controls-row { gap: 8px; margin-bottom: 10px; }
-            .controls-row-secondary { gap: 8px; }
-            .ctrl-btn { padding: 7px 12px; font-size: 12px; }
-            .page-indicator { padding: 7px 12px; font-size: 12px; }
-            .goto-wrapper input { width: 46px; font-size: 12px; }
-            #zoomSlider { width: 75px; }
-            .zoom-control { padding: 3px 10px; }
-            .icon-btn { width: 32px; height: 32px; font-size: 15px; }
-            .double-tap-hint { font-size: 11px; padding: 8px 16px; white-space: nowrap; }
-        }
-
-        input[type=number]::-webkit-inner-spin-button, 
-        input[type=number]::-webkit-outer-spin-button {
-            opacity: 0.4;
-        }
-    </style>
+    @media (max-width: 540px) {
+      .page-nav-btn span { display: none; }
+      .goto-strip input { width: 46px; }
+    }
+    @media (max-width: 420px) {
+      .zoom-strip { display: none; }
+      #topBar, #bottomBar { padding: 8px 12px 12px; }
+      #scrollArea { padding: 12px 8px; }
+    }
+    input[type=number]::-webkit-inner-spin-button,
+    input[type=number]::-webkit-outer-spin-button { display: none; }
+  </style>
 </head>
 <body>
 
-<div class="scroll-container" id="scrollContainer">
-    <div class="image-wrapper" id="imageWrapper">
-        <img id="pageImage" alt="Book page" draggable="false">
-    </div>
+<div id="topBar">
+  <div class="top-left">
+    <button class="page-nav-btn" id="prevBtn">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><polyline points="9,2 4,7 9,12"/></svg>
+      <span>Prev</span>
+    </button>
+    <button class="page-nav-btn" id="nextBtn">
+      <span>Next</span>
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><polyline points="5,2 10,7 5,12"/></svg>
+    </button>
+  </div>
+
+  <div class="page-pill">
+    <strong id="pageNum">1</strong>
+    <span>/</span>
+    <span id="totalNum">934</span>
+  </div>
+
+  <div class="top-right">
+    <button class="icon-btn" id="fitBtn" title="Fit to screen">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="1" y="1" width="5" height="5" rx="1"/>
+        <rect x="10" y="1" width="5" height="5" rx="1"/>
+        <rect x="1" y="10" width="5" height="5" rx="1"/>
+        <rect x="10" y="10" width="5" height="5" rx="1"/>
+      </svg>
+    </button>
+  </div>
 </div>
 
-<div class="swipe-area swipe-left"></div>
-<div class="swipe-area swipe-right"></div>
-
-<div class="controls" id="controlsBar">
-    <div class="controls-row">
-        <button class="ctrl-btn" id="prevBtn">← Prev</button>
-        <span class="page-indicator" id="pageInfo">-- / --</span>
-        <button class="ctrl-btn" id="nextBtn">Next →</button>
-    </div>
-    <div class="controls-row-secondary">
-        <div class="goto-wrapper">
-            <input type="number" id="gotoPageInput" placeholder="Pg" min="1" max="934">
-            <button class="ctrl-btn" id="gotoBtn">Go</button>
-        </div>
-        <div class="zoom-control">
-            <span>🔍</span>
-            <input type="range" id="zoomSlider" min="0" max="100" value="42" step="1">
-            <span id="zoomPercent" class="zoom-percent">42%</span>
-        </div>
-        <button class="icon-btn" id="fitBtn" title="Fit to screen">⊡</button>
-        <button class="icon-btn" id="zoomMinusBtn" title="Zoom out">−</button>
-        <button class="icon-btn" id="zoomPlusBtn" title="Zoom in">+</button>
-    </div>
+<div id="scrollArea">
+  <img id="pageImg" alt="Book page" draggable="false">
 </div>
 
-<div class="loading-slim" id="slimLoader">
-    <div class="loading-dot"></div>
-    <span>Loading...</span>
+<div id="bottomBar">
+  <div class="zoom-strip">
+    <button class="icon-btn" id="zoomOutBtn" style="width:32px;height:32px;border-radius:7px;font-size:16px;">−</button>
+    <input type="range" id="zoomSlider" min="0" max="100" value="40" step="1">
+    <button class="icon-btn" id="zoomInBtn" style="width:32px;height:32px;border-radius:7px;font-size:16px;">+</button>
+    <span class="zoom-label" id="zoomLabel">45%</span>
+  </div>
+  <div class="goto-strip">
+    <input type="number" id="gotoInput" placeholder="Pg" min="1" max="934">
+    <button id="gotoBtn">Go</button>
+  </div>
 </div>
 
-<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<div id="loader"><div class="spin"></div> Loading…</div>
+<div id="toast"></div>
+
 <script>
-    // ========== CONFIGURATION ==========
-    const ARCHIVE_BASE = "https://ia803205.us.archive.org/view_archive.php?archive=/29/items/Asraar-e-Mehboob-Kamil._20260528/Asraar%20e%20Mehboob%20Kamil.%20%D8%A7%D8%B3%D8%B1%D8%A7%D8%B1%20%D9%85%D8%AD%D8%A8%D9%88%D8%A8%20%DA%A9%D8%A7%D9%85%D9%84_jp2.zip&file=Asraar%20e%20Mehboob%20Kamil.%20%D8%A7%D8%B3%D8%B1%D8%A7%D8%B1%20%D9%85%D8%AD%D8%A8%D9%88%D8%A8%20%DA%A9%D8%A7%D9%85%D9%84_jp2%2FAsraar%20e%20Mehboob%20Kamil.%20%D8%A7%D8%B3%D8%B1%D8%A7%D8%B1%20%D9%85%D8%AD%D8%A8%D9%88%D8%A8%20%DA%A9%D8%A7%D9%85%D9%84_";
-    const TOTAL_PAGES = 934;
-    let currentPage = 0;
-    let currentZoom = 0.45;
-    let naturalW = 0, naturalH = 0;
-    let isLoading = false;
-    let controlsTimeout = null;
-    
-    const $container = $('#scrollContainer');
-    const $image = $('#pageImage');
-    const $wrapper = $('#imageWrapper');
-    const $slider = $('#zoomSlider');
-    const $zoomPercent = $('#zoomPercent');
-    const $loader = $('#slimLoader');
-    const $pageInfo = $('#pageInfo');
-    const $gotoInput = $('#gotoPageInput');
-    const $controls = $('#controlsBar');
-    
-    let preloadCache = {};
-    
-    function getImageUrl(pageIdx) {
-        return ARCHIVE_BASE + pageIdx.toString().padStart(4, '0') + ".jp2&ext=jpg";
-    }
-    
-    // ========== CONTROLS - ONLY ON DOUBLE TAP ==========
-    let lastTapTime = 0;
-    let tapTimeout = null;
-    
-    function showControls() {
-        $controls.addClass('visible');
-        if (controlsTimeout) clearTimeout(controlsTimeout);
-        controlsTimeout = setTimeout(() => {
-            $controls.removeClass('visible');
-        }, 3000);
-    }
-    
-    function hideControls() {
-        $controls.removeClass('visible');
-    }
-    
-    // Double tap detection on the entire container
-    $container.on('touchend click', function(e) {
-        const currentTime = new Date().getTime();
-        const tapLength = currentTime - lastTapTime;
-        
-        // Clear previous timeout
-        if (tapTimeout) clearTimeout(tapTimeout);
-        
-        if (tapLength < 300 && tapLength > 0) {
-            // DOUBLE TAP detected!
-            e.preventDefault();
-            showControls();
-            lastTapTime = 0;
-        } else {
-            // Single tap - set timeout to reset
-            tapTimeout = setTimeout(() => {
-                lastTapTime = 0;
-            }, 300);
-            lastTapTime = currentTime;
-        }
-    });
-    
-    // Keep controls visible while interacting with them
-    $controls.on('mouseenter touchstart', function() {
-        $controls.addClass('visible');
-        if (controlsTimeout) clearTimeout(controlsTimeout);
-    });
-    
-    $controls.on('mouseleave', function() {
-        if (controlsTimeout) clearTimeout(controlsTimeout);
-        controlsTimeout = setTimeout(() => {
-            $controls.removeClass('visible');
-        }, 3000);
-    });
-    
-    // ========== ZOOM FUNCTIONS ==========
-    function applyZoom() {
-        if (!naturalW || !naturalH) return;
-        
-        const newWidth = naturalW * currentZoom;
-        const newHeight = naturalH * currentZoom;
-        
-        $image.css({
-            width: newWidth + 'px',
-            height: newHeight + 'px'
-        });
-        
-        $wrapper.css({
-            width: newWidth + 'px',
-            minWidth: newWidth + 'px',
-            height: newHeight + 'px',
-            minHeight: newHeight + 'px'
-        });
-        
-        const minZ = 0.32, maxZ = 2.8;
-        let t = (currentZoom - minZ) / (maxZ - minZ);
-        t = Math.min(1, Math.max(0, t));
-        $slider.val(Math.round(t * 100));
-        $zoomPercent.text(Math.round(currentZoom * 100) + '%');
-        saveZoomToLocal();
-    }
-    
-    function computeFitScale() {
-        if (!naturalW) return 0.48;
-        const containerW = $container.width();
-        const containerH = $container.height();
-        const targetW = containerW - 40;
-        const targetH = containerH - 80;
-        let scaleW = targetW / naturalW;
-        let scaleH = targetH / naturalH;
-        let scale = Math.min(scaleW, scaleH);
-        scale = Math.min(1.8, Math.max(0.32, scale));
-        return scale;
-    }
-    
-    function fitToScreen() {
-        if (!naturalW) return;
-        currentZoom = computeFitScale();
-        applyZoom();
-        $container.scrollLeft(0);
-        $container.scrollTop(0);
-        showToast("✓ Fit to screen", 800);
-    }
-    
-    function zoomIn() {
-        let newZ = currentZoom + 0.12;
-        if (newZ <= 2.8) {
-            currentZoom = newZ;
-            applyZoom();
-            showToast(`${Math.round(currentZoom*100)}%`, 400);
-        } else showToast("Max zoom", 600);
-    }
-    
-    function zoomOut() {
-        let newZ = currentZoom - 0.12;
-        if (newZ >= 0.32) {
-            currentZoom = newZ;
-            applyZoom();
-            showToast(`${Math.round(currentZoom*100)}%`, 400);
-        } else showToast("Min zoom", 600);
-    }
-    
-    function setZoomFromSlider(percent) {
-        const minZ = 0.32, maxZ = 2.8;
-        let newZ = minZ + (percent / 100) * (maxZ - minZ);
-        newZ = Math.min(maxZ, Math.max(minZ, newZ));
-        currentZoom = newZ;
-        applyZoom();
-        showToast(`${Math.round(currentZoom*100)}%`, 500);
-    }
-    
-    // ========== PAGE LOADING ==========
-    function smartPreload(current) {
-        const neighbors = [current+1, current+2, current-1].filter(p => p >= 0 && p < TOTAL_PAGES);
-        for (let p of neighbors) {
-            if (!preloadCache[p]) {
-                const img = new Image();
-                img.src = getImageUrl(p);
-                preloadCache[p] = img;
-            }
-        }
-        for (let key in preloadCache) {
-            let k = parseInt(key);
-            if (Math.abs(k - current) > 5) delete preloadCache[key];
-        }
-    }
-    
-    function showLoader() { $loader.fadeIn(100); }
-    function hideLoader() { setTimeout(() => $loader.fadeOut(150), 100); }
-    
-    function loadPage(pageIdx) {
-        if (pageIdx < 0 || pageIdx >= TOTAL_PAGES) {
-            showToast(pageIdx < 0 ? "First page" : "Last page", 700);
-            return false;
-        }
-        if (isLoading) return false;
-        isLoading = true;
-        showLoader();
-        
-        const target = pageIdx;
-        const url = getImageUrl(target);
-        
-        if (preloadCache[target] && preloadCache[target].complete && preloadCache[target].naturalWidth > 0) {
-            applyImageData(preloadCache[target], target);
-            return true;
-        }
-        
-        const img = new Image();
-        img.onload = () => applyImageData(img, target);
-        img.onerror = () => {
-            hideLoader();
-            isLoading = false;
-            showToast(`Retry page ${target+1}`, 1000);
-            setTimeout(() => { const retry = new Image(); retry.onload = () => applyImageData(retry, target); retry.src = url; }, 500);
-        };
-        img.src = url;
-        return true;
-    }
-    
-    function applyImageData(img, pageIdx) {
-        if (!img || img.naturalWidth === 0) {
-            hideLoader();
-            isLoading = false;
-            return;
-        }
-        
-        naturalW = img.naturalWidth;
-        naturalH = img.naturalHeight;
-        $image.attr('src', img.src);
-        currentPage = pageIdx;
-        
-        const displayNum = currentPage + 1;
-        $pageInfo.text(`${displayNum} / ${TOTAL_PAGES}`);
-        $gotoInput.val(displayNum);
-        saveCurrentPageToLocal();
-        
-        currentZoom = Math.min(2.8, Math.max(0.32, currentZoom));
-        const newWidth = naturalW * currentZoom;
-        const newHeight = naturalH * currentZoom;
-        
-        $image.css({ width: newWidth + 'px', height: newHeight + 'px' });
-        $wrapper.css({
-            width: newWidth + 'px',
-            minWidth: newWidth + 'px',
-            height: newHeight + 'px',
-            minHeight: newHeight + 'px'
-        });
-        
-        const minZ = 0.32, maxZ = 2.8;
-        let t = (currentZoom - minZ) / (maxZ - minZ);
-        $slider.val(Math.round(t * 100));
-        $zoomPercent.text(Math.round(currentZoom * 100) + '%');
-        
-        $container.scrollLeft(0);
-        $container.scrollTop(0);
-        
-        hideLoader();
-        isLoading = false;
-        smartPreload(currentPage);
-        preloadCache[currentPage] = img;
-        
-        // Show hint for first-time users (only once)
-        setTimeout(() => {
-            if (!localStorage.getItem('double_tap_hint_shown')) {
-                showDoubleTapHint();
-                localStorage.setItem('double_tap_hint_shown', 'true');
-            }
-        }, 1000);
-    }
-    
-    function showDoubleTapHint() {
-        let hint = $('.double-tap-hint');
-        if (!hint.length) {
-            $('body').append('<div class="double-tap-hint">✨ Double-tap anywhere for controls | ✌️ Pinch to zoom</div>');
-            hint = $('.double-tap-hint');
-            setTimeout(() => hint.remove(), 4000);
-        }
-    }
-    
-    // ========== PERSISTENCE ==========
-    function saveCurrentPageToLocal() { try { localStorage.setItem("noorani_page", currentPage); } catch(e) {} }
-    function saveZoomToLocal() { try { localStorage.setItem("noorani_zoom", currentZoom); } catch(e) {} }
-    
-    function loadStoredSession() {
-        try {
-            let savedPage = localStorage.getItem("noorani_page");
-            if (savedPage !== null && !isNaN(parseInt(savedPage))) {
-                let pg = parseInt(savedPage);
-                if (pg >= 0 && pg < TOTAL_PAGES) currentPage = pg;
-            }
-            let savedZoom = localStorage.getItem("noorani_zoom");
-            if (savedZoom !== null && !isNaN(parseFloat(savedZoom))) {
-                let z = parseFloat(savedZoom);
-                if (z >= 0.32 && z <= 2.8) currentZoom = z;
-            }
-        } catch(e) {}
-    }
-    
-    // ========== NAVIGATION ==========
-    function nextPage() { if (currentPage + 1 < TOTAL_PAGES) loadPage(currentPage + 1); else showToast("Final page", 700); }
-    function prevPage() { if (currentPage > 0) loadPage(currentPage - 1); else showToast("First page", 700); }
-    function goToPage(num) {
-        let target = parseInt(num);
-        if (isNaN(target)) { showToast("Enter 1-934"); return; }
-        target = Math.min(TOTAL_PAGES, Math.max(1, target));
-        if (target - 1 !== currentPage) { loadPage(target - 1); showToast(`Page ${target}`, 600); }
-        else showToast(`Already on page ${target}`, 600);
-    }
-    
-    let toastTimer;
-    function showToast(msg, dur = 1300) {
-        let $toast = $('.toast-msg');
-        if (!$toast.length) $('body').append('<div class="toast-msg"></div>');
-        $toast = $('.toast-msg');
-        $toast.stop(true).text(msg).fadeIn(120);
-        if (toastTimer) clearTimeout(toastTimer);
-        toastTimer = setTimeout(() => $toast.fadeOut(200), dur);
-    }
-    
-    // ========== PINCH ZOOM GESTURE ==========
-    let pinchStartDist = 0, pinchStartZoom = 1;
-    function getPinchDist(e) {
-        if (e.originalEvent?.touches?.length === 2) {
-            const t1 = e.originalEvent.touches[0], t2 = e.originalEvent.touches[1];
-            return Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
-        }
-        return 0;
-    }
-    
-    $container.on('touchstart', (e) => {
-        if (e.originalEvent?.touches?.length === 2) {
-            e.preventDefault();
-            pinchStartDist = getPinchDist(e);
-            pinchStartZoom = currentZoom;
-        }
-    });
-    
-    $container.on('touchmove', (e) => {
-        if (e.originalEvent?.touches?.length === 2 && pinchStartDist > 0) {
-            e.preventDefault();
-            let newDist = getPinchDist(e);
-            if (newDist > 5) {
-                let ratio = newDist / pinchStartDist;
-                let newZoom = pinchStartZoom * ratio;
-                newZoom = Math.min(2.8, Math.max(0.32, newZoom));
-                if (Math.abs(newZoom - currentZoom) > 0.01) {
-                    currentZoom = newZoom;
-                    applyZoom();
-                }
-            }
-        }
-    });
-    
-    // Image double tap to toggle fit/zoom (separate from controls double tap)
-    let imageLastTap = 0;
-    $image.on('touchend click', (e) => {
-        const now = Date.now();
-        if (now - imageLastTap < 280) {
-            e.preventDefault();
-            e.stopPropagation();
-            const fitScale = computeFitScale();
-            if (Math.abs(currentZoom - fitScale) < 0.08) {
-                currentZoom = Math.min(2.2, 1.55);
-                applyZoom();
-                showToast("Zoom 155%", 500);
-            } else {
-                fitToScreen();
-            }
-        }
-        imageLastTap = now;
-    });
-    
-    $container.on('touchend', (e) => {
-        pinchStartDist = 0;
-    });
-    
-    $container.on('wheel', (e) => {
-        if (e.ctrlKey) {
-            e.preventDefault();
-            if (e.deltaY < 0) zoomIn();
-            else if (e.deltaY > 0) zoomOut();
-        }
-    });
-    
-    // ========== KEYBOARD SHORTCUTS ==========
-    $(document).keydown((e) => {
-        const isTyping = document.activeElement?.tagName === 'INPUT';
-        if (!isTyping) {
-            switch(e.key) {
-                case 'ArrowRight': e.preventDefault(); nextPage(); break;
-                case 'ArrowLeft': e.preventDefault(); prevPage(); break;
-                case '+': case '=': e.preventDefault(); zoomIn(); break;
-                case '-': case '_': e.preventDefault(); zoomOut(); break;
-                case '0': e.preventDefault(); fitToScreen(); break;
-                case 'f': case 'F': e.preventDefault(); fitToScreen(); break;
-            }
-        }
-        if (e.key === 'Enter' && document.activeElement?.id === 'gotoPageInput') {
-            e.preventDefault();
-            goToPage($gotoInput.val());
-        }
-    });
-    
-    // ========== EVENT BINDINGS ==========
-    $('#prevBtn').on('click', prevPage);
-    $('#nextBtn').on('click', nextPage);
-    $('#fitBtn').on('click', fitToScreen);
-    $('#zoomMinusBtn').on('click', zoomOut);
-    $('#zoomPlusBtn').on('click', zoomIn);
-    $slider.on('input', function() { setZoomFromSlider(parseInt($(this).val())); });
-    $('#gotoBtn').on('click', () => goToPage($gotoInput.val()));
-    $('#gotoPageInput').on('keypress', (e) => { if (e.which === 13) goToPage($gotoInput.val()); });
-    $('.swipe-left').on('click', prevPage);
-    $('.swipe-right').on('click', nextPage);
-    
-    let resizeTimer;
-    $(window).on('resize', () => {
-        if (resizeTimer) clearTimeout(resizeTimer);
-        resizeTimer = setTimeout(() => {
-            if (naturalW && naturalH) {
-                const newWidth = naturalW * currentZoom;
-                const newHeight = naturalH * currentZoom;
-                $wrapper.css({
-                    width: newWidth + 'px',
-                    minWidth: newWidth + 'px',
-                    height: newHeight + 'px',
-                    minHeight: newHeight + 'px'
-                });
-            }
-        }, 200);
-    });
-    
-    // ========== INITIALIZE ==========
-    $(document).ready(function() {
-        loadStoredSession();
-        $pageInfo.text(`1 / ${TOTAL_PAGES}`);
-        $gotoInput.attr('placeholder', `1-${TOTAL_PAGES}`);
-        $gotoInput.attr('max', TOTAL_PAGES);
-        loadPage(currentPage);
-    });
+const ARCHIVE_BASE = "https://ia803205.us.archive.org/view_archive.php?archive=/29/items/Asraar-e-Mehboob-Kamil._20260528/Asraar%20e%20Mehboob%20Kamil.%20%D8%A7%D8%B3%D8%B1%D8%A7%D8%B1%20%D9%85%D8%AD%D8%A8%D9%88%D8%A8%20%DA%A9%D8%A7%D9%85%D9%84_jp2.zip&file=Asraar%20e%20Mehboob%20Kamil.%20%D8%A7%D8%B3%D8%B1%D8%A7%D8%B1%20%D9%85%D8%AD%D8%A8%D9%88%D8%A8%20%DA%A9%D8%A7%D9%85%D9%84_jp2%2FAsraar%20e%20Mehboob%20Kamil.%20%D8%A7%D8%B3%D8%B1%D8%A7%D8%B1%20%D9%85%D8%AD%D8%A8%D9%88%D8%A8%20%DA%A9%D8%A7%D9%85%D9%84_";
+const TOTAL = 934;
+let cur = 0, zoom = 0.45, natW = 0, natH = 0, busy = false;
+const preload = {};
+let toastTimer = null;
+
+const $scroll = document.getElementById('scrollArea');
+const $img = document.getElementById('pageImg');
+const $loader = document.getElementById('loader');
+const $toast = document.getElementById('toast');
+const $slider = document.getElementById('zoomSlider');
+const $zLabel = document.getElementById('zoomLabel');
+const $pageNum = document.getElementById('pageNum');
+const $gotoInput = document.getElementById('gotoInput');
+
+function url(idx) {
+  return ARCHIVE_BASE + String(idx).padStart(4,'0') + ".jp2&ext=jpg";
+}
+
+function toast(msg, dur=1000) {
+  $toast.textContent = msg;
+  $toast.classList.add('show');
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => $toast.classList.remove('show'), dur);
+}
+
+function updateSlider() {
+  const minZ=0.3, maxZ=2.8;
+  let t = (zoom - minZ)/(maxZ-minZ);
+  $slider.value = Math.round(Math.min(1,Math.max(0,t))*100);
+  $zLabel.textContent = Math.round(zoom*100)+'%';
+}
+
+function applyZoom() {
+  if (!natW) return;
+  $img.style.width = (natW*zoom)+'px';
+  $img.style.height = (natH*zoom)+'px';
+  updateSlider();
+  try { localStorage.setItem('nr_zoom', zoom); } catch(e) {}
+}
+
+function fitScale() {
+  if (!natW) return 0.45;
+  const cw = $scroll.clientWidth - 32, ch = $scroll.clientHeight - 40;
+  return Math.min(2.4, Math.max(0.3, Math.min(cw/natW, ch/natH)));
+}
+
+function fit() {
+  zoom = fitScale();
+  applyZoom();
+  $scroll.scrollLeft = 0; $scroll.scrollTop = 0;
+  toast('Fit to screen', 700);
+}
+
+function zoomIn()  { zoom = Math.min(2.8, zoom+0.12); applyZoom(); toast(Math.round(zoom*100)+'%', 400); }
+function zoomOut() { zoom = Math.max(0.3, zoom-0.12); applyZoom(); toast(Math.round(zoom*100)+'%', 400); }
+
+function preloadNeighbors(p) {
+  [p+1, p+2, p-1].filter(x => x>=0 && x<TOTAL).forEach(x => {
+    if (!preload[x]) { const i = new Image(); i.src = url(x); preload[x] = i; }
+  });
+  Object.keys(preload).forEach(k => { if (Math.abs(k-p) > 6) delete preload[k]; });
+}
+
+function loadPage(idx) {
+  if (idx < 0 || idx >= TOTAL) { toast(idx < 0 ? 'First page' : 'Last page', 800); return; }
+  if (busy) return;
+  busy = true;
+  $loader.style.display = 'flex';
+  const cached = preload[idx];
+  if (cached && cached.complete && cached.naturalWidth > 0) { applyPage(cached, idx); return; }
+  const i = new Image();
+  i.onload = () => applyPage(i, idx);
+  i.onerror = () => { $loader.style.display='none'; busy=false; toast('Load failed, retrying…'); setTimeout(() => loadPage(idx), 800); };
+  i.src = url(idx);
+}
+
+function applyPage(img, idx) {
+  if (!img.naturalWidth) { $loader.style.display='none'; busy=false; return; }
+  natW = img.naturalWidth; natH = img.naturalHeight;
+  $img.src = img.src;
+  cur = idx;
+  $pageNum.textContent = cur + 1;
+  $gotoInput.value = cur + 1;
+  zoom = Math.min(2.8, Math.max(0.3, zoom));
+  applyZoom();
+  $scroll.scrollLeft = 0; $scroll.scrollTop = 0;
+  $loader.style.display = 'none';
+  busy = false;
+  preloadNeighbors(cur);
+  preload[cur] = img;
+  try { localStorage.setItem('nr_page', cur); } catch(e) {}
+
+  if (!localStorage.getItem('nr_hint_shown')) {
+    localStorage.setItem('nr_hint_shown', '1');
+    const h = document.createElement('div'); h.id = 'hint';
+    h.textContent = 'Pinch to zoom  ·  Arrow keys to turn pages';
+    document.body.appendChild(h);
+    setTimeout(() => h.remove(), 4000);
+  }
+}
+
+function goTo(num) {
+  const p = parseInt(num);
+  if (isNaN(p)) { toast('Enter 1–' + TOTAL); return; }
+  loadPage(Math.min(TOTAL, Math.max(1, p)) - 1);
+}
+
+document.getElementById('prevBtn').addEventListener('click', () => loadPage(cur-1));
+document.getElementById('nextBtn').addEventListener('click', () => loadPage(cur+1));
+document.getElementById('fitBtn').addEventListener('click', fit);
+document.getElementById('zoomInBtn').addEventListener('click', zoomIn);
+document.getElementById('zoomOutBtn').addEventListener('click', zoomOut);
+document.getElementById('gotoBtn').addEventListener('click', () => goTo($gotoInput.value));
+$gotoInput.addEventListener('keydown', e => { if (e.key === 'Enter') goTo($gotoInput.value); });
+$slider.addEventListener('input', function() {
+  const minZ=0.3, maxZ=2.8;
+  zoom = minZ + (this.value/100) * (maxZ-minZ);
+  applyZoom();
+});
+
+document.addEventListener('keydown', e => {
+  if (document.activeElement?.tagName === 'INPUT') return;
+  if (e.key==='ArrowRight'||e.key==='ArrowDown') { e.preventDefault(); loadPage(cur+1); }
+  else if (e.key==='ArrowLeft'||e.key==='ArrowUp') { e.preventDefault(); loadPage(cur-1); }
+  else if (e.key==='+'||e.key==='=') { e.preventDefault(); zoomIn(); }
+  else if (e.key==='-') { e.preventDefault(); zoomOut(); }
+  else if (e.key==='0'||e.key==='f') { e.preventDefault(); fit(); }
+});
+
+let pinchDist = 0, pinchZoom = 1;
+$scroll.addEventListener('touchstart', e => {
+  if (e.touches.length === 2) {
+    e.preventDefault();
+    pinchDist = Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY);
+    pinchZoom = zoom;
+  }
+}, {passive: false});
+$scroll.addEventListener('touchmove', e => {
+  if (e.touches.length === 2 && pinchDist > 0) {
+    e.preventDefault();
+    const d = Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY);
+    const nz = Math.min(2.8, Math.max(0.3, pinchZoom*(d/pinchDist)));
+    if (Math.abs(nz-zoom) > 0.01) { zoom = nz; applyZoom(); }
+  }
+}, {passive: false});
+$scroll.addEventListener('touchend', () => { pinchDist = 0; });
+$scroll.addEventListener('wheel', e => {
+  if (e.ctrlKey || e.metaKey) { e.preventDefault(); e.deltaY < 0 ? zoomIn() : zoomOut(); }
+}, {passive: false});
+
+(function init() {
+  try {
+    const sp = localStorage.getItem('nr_page');
+    if (sp && !isNaN(+sp)) { const p = +sp; if (p >= 0 && p < TOTAL) cur = p; }
+    const sz = localStorage.getItem('nr_zoom');
+    if (sz && !isNaN(+sz)) { const z = +sz; if (z >= 0.3 && z <= 2.8) zoom = z; }
+  } catch(e) {}
+  document.getElementById('totalNum').textContent = TOTAL;
+  loadPage(cur);
+})();
 </script>
 </body>
 </html>
