@@ -16,6 +16,7 @@
       background: #141210;
       font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
       height: 100vh;
+      height: 100dvh;
       overflow: hidden;
       display: flex;
       flex-direction: column;
@@ -136,6 +137,7 @@
       flex-shrink: 0;
       gap: 12px;
       flex-wrap: wrap;
+      z-index: 13;
     }
 
     .zoom-strip {
@@ -188,6 +190,7 @@
       backdrop-filter: blur(4px);
       flex-shrink: 0;
       border: 0.5px solid rgba(245, 215, 66, 0.25);
+      min-width: fit-content;
     }
     .goto-strip input {
       width: 70px;
@@ -315,7 +318,7 @@
       .page-nav-btn { padding: 0 12px; }
       .zoom-strip { flex: 1; min-width: 120px; }
       .goto-strip input { width: 60px; height: 34px; font-size: 13px; }
-      .goto-strip button { padding: 0 12px; height: 34px; font-size: 12px; }
+      .goto-strip button { padding: 0 12px; height: 34px; font-size: 12px; display: inline-flex !important; align-items: center; justify-content: center; }
       .zoom-label { display: none; }
     }
 
@@ -323,9 +326,20 @@
       #bottomBar { padding: 8px 12px 14px; gap: 8px; }
       .zoom-strip { gap: 6px; }
       .zoom-strip .icon-btn { width: 32px; height: 32px; }
-      .goto-strip { padding: 3px 6px 3px 10px; }
+      .goto-strip { 
+        padding: 3px 6px 3px 10px; 
+        display: flex !important; 
+        visibility: visible !important; 
+      }
       .goto-strip input { width: 55px; height: 32px; }
-      .goto-strip button { padding: 0 10px; height: 32px; }
+      .goto-strip button { 
+        padding: 0 10px; 
+        height: 32px; 
+        display: inline-flex !important; 
+        align-items: center; 
+        justify-content: center; 
+        visibility: visible !important;
+      }
       .page-pill { padding: 0 10px; height: 36px; font-size: 11px; min-width: 75px; }
       .page-pill strong { font-size: 14px; }
       .top-left, .top-right { gap: 6px; }
@@ -334,7 +348,7 @@
 
     @media (max-width: 430px) {
       .goto-strip input { width: 50px; }
-      .goto-strip button { padding: 0 8px; }
+      .goto-strip button { padding: 0 8px; display: inline-flex !important; }
       .zoom-strip { min-width: 100px; }
       #scrollArea { padding: 12px 12px; }
     }
@@ -344,7 +358,7 @@
       .zoom-strip .icon-btn { width: 28px; height: 28px; font-size: 16px; }
       input[type="range"] { min-width: 60px; }
       .goto-strip input { width: 46px; font-size: 12px; }
-      .goto-strip button { padding: 0 6px; font-size: 11px; }
+      .goto-strip button { padding: 0 6px; font-size: 11px; display: inline-flex !important; }
     }
 
     input[type=number]::-webkit-inner-spin-button,
@@ -401,8 +415,9 @@
 <div id="toast"></div>
 
 <script>
-  // ================= FIXED: CORRECT PAGE INDEXING (First page = 00000.jp2, last page = 00933.jp2) =================
-  // The archive files are zero-padded 5-digit numbers: page 1 → 00000, page 2 → 00001, ... page 934 → 00933
+  // ================= FIXED: CORRECT PAGE INDEXING =================
+  // The archive files are zero-padded 5-digit numbers: 
+  // Page 1 → 00000.jp2, Page 2 → 00001.jp2, ..., Page 934 → 00933.jp2
   // total pages = 934, zero-indexed range: 0 to 933 inclusive.
   const ARCHIVE_BASE = "https://ia803205.us.archive.org/view_archive.php?archive=/29/items/Asraar-e-Mehboob-Kamil._20260528/Asraar%20e%20Mehboob%20Kamil.%20%D8%A7%D8%B3%D8%B1%D8%A7%D8%B1%20%D9%85%D8%AD%D8%A8%D9%88%D8%A8%20%DA%A9%D8%A7%D9%85%D9%84_jp2.zip&file=Asraar%20e%20Mehboob%20Kamil.%20%D8%A7%D8%B3%D8%B1%D8%A7%D8%B1%20%D9%85%D8%AD%D8%A8%D9%88%D8%A8%20%DA%A9%D8%A7%D9%85%D9%84_jp2%2FAsraar%20e%20Mehboob%20Kamil.%20%D8%A7%D8%B3%D8%B1%D8%A7%D8%B1%20%D9%85%D8%AD%D8%A8%D9%88%D8%A8%20%DA%A9%D8%A7%D9%85%D9%84_";
   const TOTAL_PAGES = 934;
@@ -439,11 +454,9 @@
     toastTimer = setTimeout(() => toastDiv.classList.remove('show'), duration);
   }
 
-  // CRITICAL FIX: Generate correct 5-digit padded filename for each page (zero-index based)
-  // zeroIdx 0 → "00000", zeroIdx 933 → "00933"
+  // CRITICAL FIX: Generate correct 5-digit padded filename for each page
+  // Page 1 (zeroIdx 0) → "00000", Page 934 (zeroIdx 933) → "00933"
   function getImageUrl(zeroIdx) {
-    const pageNumberDisplay = zeroIdx + 1; // just for understanding
-    // Pad to exactly 5 digits as per archive naming: 00000, 00001, ..., 00933
     const padded = String(zeroIdx).padStart(5, '0');
     return ARCHIVE_BASE + padded + ".jp2&ext=jpg";
   }
@@ -529,7 +542,6 @@
       return;
     }
     if (isLoading) { 
-      // gentle feedback but allow overriding after a short delay
       showToast("Loading, please wait...", 500);
       return;
     }
@@ -561,7 +573,7 @@
       loaderDiv.style.display = 'none';
       isLoading = false;
       showToast(`⚠️ Network error for page ${newIndex+1}. Retrying...`, 1400);
-      // Retry after 1 second, max 2 retries implicitly
+      // Retry after 1 second
       pendingRetry = setTimeout(() => {
         if (!isLoading) loadPageByIndex(newIndex);
         pendingRetry = null;
@@ -579,7 +591,7 @@
     naturalHeight = img.naturalHeight;
     pageImg.src = img.src;
     currentIdx = idx;
-    const displayPage = currentIdx + 1;
+    const displayPage = currentIdx + 1; // Convert zero-index to 1-based display
     pageNumSpan.textContent = displayPage;
     gotoInput.value = displayPage;
     
@@ -605,9 +617,13 @@
 
   function goToPage(pageNum) {
     let p = parseInt(pageNum);
-    if (isNaN(p)) { showToast(`Enter a number 1–${TOTAL_PAGES}`); return; }
+    if (isNaN(p)) { 
+      showToast(`Enter a number 1–${TOTAL_PAGES}`); 
+      return; 
+    }
     p = Math.min(TOTAL_PAGES, Math.max(1, p));
-    const zeroIdx = p - 1;
+    const zeroIdx = p - 1; // Convert 1-based page number to zero-index
+    console.log(`Going to page ${p}, zero index ${zeroIdx}, URL: ${getImageUrl(zeroIdx)}`);
     loadPageByIndex(zeroIdx);
   }
 
@@ -625,7 +641,7 @@
     }
   });
   
-  // Keyboard: pan X/Y + page turns + zoom (enhanced)
+  // Keyboard: pan X/Y + page turns + zoom
   document.addEventListener('keydown', (e) => {
     if (document.activeElement?.tagName === 'INPUT') return;
     const key = e.key;
@@ -676,7 +692,7 @@
     }
   }, { passive: false });
   
-  // Pinch zoom on touch (improved)
+  // Pinch zoom on touch
   let initialPinchDist = 0;
   let startZoomPinch = zoomLevel;
   scrollContainer.addEventListener('touchstart', (e) => {
@@ -707,7 +723,7 @@
   
   scrollContainer.addEventListener('touchend', () => { initialPinchDist = 0; });
   
-  // resize: reapply zoom and maintain
+  // resize: reapply zoom
   window.addEventListener('resize', () => {
     if (naturalWidth) applyZoomAndUpdateScroll();
   });
@@ -719,31 +735,90 @@
   zoomInBtn.addEventListener('click', zoomIn);
   zoomOutBtn.addEventListener('click', zoomOut);
   gotoBtn.addEventListener('click', () => goToPage(gotoInput.value));
-  gotoInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') goToPage(gotoInput.value); });
+  gotoInput.addEventListener('keydown', (e) => { 
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      goToPage(gotoInput.value);
+    }
+  });
   
-  // INIT with correct first page (index 0 → 00000.jp2)
+  // INIT with correct first page (index 0 → 00000.jp2 = page 1)
   function init() {
     totalSpan.textContent = TOTAL_PAGES;
+    
+    // Try to restore last page from localStorage
     try {
       const savedPage = localStorage.getItem('noorani_last_page_v2');
       if (savedPage !== null && !isNaN(parseInt(savedPage))) {
         let pg = parseInt(savedPage);
-        if (pg >= 0 && pg < TOTAL_PAGES) currentIdx = pg;
-        else currentIdx = 0;
+        // Validate the saved page is within range
+        if (pg >= 0 && pg < TOTAL_PAGES) {
+          currentIdx = pg;
+        } else {
+          currentIdx = 0; // Start from page 1 if saved page is invalid
+        }
       } else {
-        currentIdx = 0;  // always start from page 1 (00000)
+        currentIdx = 0; // Start from page 1 (00000.jp2)
       }
+      
       const savedZoom = localStorage.getItem('noorani_zoom_v2');
       if (savedZoom !== null && !isNaN(parseFloat(savedZoom))) {
         let z = parseFloat(savedZoom);
         if (z >= 0.28 && z <= 3.4) zoomLevel = z;
       }
-    } catch(e) { currentIdx = 0; }
-    // Force load first page with correct indexing
+    } catch(e) {
+      console.warn('Error reading localStorage:', e);
+      currentIdx = 0;
+    }
+    
+    // Set initial values for goto input
+    gotoInput.value = currentIdx + 1;
+    gotoInput.max = TOTAL_PAGES;
+    gotoInput.min = 1;
+    
+    // Ensure goto button is visible on mobile
+    const gotoBtn = document.getElementById('gotoBtn');
+    if (gotoBtn) {
+      gotoBtn.style.display = 'inline-flex';
+      gotoBtn.style.visibility = 'visible';
+    }
+    
+    console.log(`Initializing: Page ${currentIdx + 1}, URL: ${getImageUrl(currentIdx)}`);
+    
+    // Load the first page
     loadPageByIndex(currentIdx);
   }
   
+  // Force visibility of goto button on mobile after DOM loads
+  document.addEventListener('DOMContentLoaded', function() {
+    const gotoBtn = document.getElementById('gotoBtn');
+    const gotoStrip = document.querySelector('.goto-strip');
+    if (gotoBtn) {
+      gotoBtn.style.setProperty('display', 'inline-flex', 'important');
+      gotoBtn.style.setProperty('visibility', 'visible', 'important');
+    }
+    if (gotoStrip) {
+      gotoStrip.style.setProperty('display', 'flex', 'important');
+      gotoStrip.style.setProperty('visibility', 'visible', 'important');
+    }
+  });
+  
+  // Start the app
   init();
+  
+  // Additional check after window loads to ensure goto button is visible
+  window.addEventListener('load', function() {
+    const gotoBtn = document.getElementById('gotoBtn');
+    const gotoStrip = document.querySelector('.goto-strip');
+    if (gotoBtn) {
+      gotoBtn.style.setProperty('display', 'inline-flex', 'important');
+      gotoBtn.style.setProperty('visibility', 'visible', 'important');
+    }
+    if (gotoStrip) {
+      gotoStrip.style.setProperty('display', 'flex', 'important');
+      gotoStrip.style.setProperty('visibility', 'visible', 'important');
+    }
+  });
 </script>
 </body>
 </html>
