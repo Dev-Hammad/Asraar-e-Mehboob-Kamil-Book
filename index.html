@@ -409,14 +409,13 @@
 <div id="toast"></div>
 
 <script>
-  // ================= CORRECTED URL STRUCTURE =================
-  // The correct endpoint pattern from your example:
-  // https://ia803205.us.archive.org/view_archive.php?archive=/29/items/Asraar-e-Mehboob-Kamil._20260528/Asraar%20e%20Mehboob%20Kamil.%20%D8%A7%D8%B3%D8%B1%D8%A7%D8%B1%20%D9%85%D8%AD%D8%A8%D9%88%D8%A8%20%DA%A9%D8%A7%D9%85%D9%84_jp2.zip&file=Asraar%20e%20Mehboob%20Kamil.%20%D8%A7%D8%B3%D8%B1%D8%A7%D8%B1%20%D9%85%D8%AD%D8%A8%D9%88%D8%A8%20%DA%A9%D8%A7%D9%85%D9%84_jp2%2FAsraar%20e%20Mehboob%20Kamil.%20%D8%A7%D8%B3%D8%B1%D8%A7%D8%B1%20%D9%85%D8%AD%D8%A8%D9%88%D8%A8%20%DA%A9%D8%A7%D9%85%D9%84_0078.jp2&ext=jpg
-
-  // Base URL components
+  // ================= CORRECTED: 4-DIGIT PADDING (NOT 5) =================
+  // Files are named: _0000.jp2 (page 1), _0001.jp2 (page 2), ..., _0933.jp2 (page 934)
+  // Pattern confirmed from your working URLs
+  
   const ARCHIVE_URL = "https://ia803205.us.archive.org/view_archive.php";
   const ARCHIVE_PATH = "/29/items/Asraar-e-Mehboob-Kamil._20260528/Asraar%20e%20Mehboob%20Kamil.%20%D8%A7%D8%B3%D8%B1%D8%A7%D8%B1%20%D9%85%D8%AD%D8%A8%D9%88%D8%A8%20%DA%A9%D8%A7%D9%85%D9%84_jp2.zip";
-  const FILE_PREFIX = "Asraar%20e%20Mehboob%20Kamil.%20%D8%A7%D8%B3%D8%B1%D8%A7%D8%B1%20%D9%85%D8%AD%D8%A8%D9%88%D8%A8%20%DA%A9%D8%A7%D9%85%D9%84_jp2%2FAsraar%20e%20Mehboob%20Kamil.%20%D8%A7%D8%B3%D8%B1%D8%A7%D8%B1%20%D9%85%D8%AD%D8%A8%D9%88%D8%A8%20%DA%A9%D8%A7%D9%85%D9%84_";
+  const FILE_PATH = "Asraar%20e%20Mehboob%20Kamil.%20%D8%A7%D8%B3%D8%B1%D8%A7%D8%B1%20%D9%85%D8%AD%D8%A8%D9%88%D8%A8%20%DA%A9%D8%A7%D9%85%D9%84_jp2%2FAsraar%20e%20Mehboob%20Kamil.%20%D8%A7%D8%B3%D8%B1%D8%A7%D8%B1%20%D9%85%D8%AD%D8%A8%D9%88%D8%A8%20%DA%A9%D8%A7%D9%85%D9%84_";
   
   const TOTAL_PAGES = 934;
   let currentIdx = 0;        // zero-indexed internal (0 = page 1, 933 = page 934)
@@ -452,14 +451,12 @@
     toastTimer = setTimeout(() => toastDiv.classList.remove('show'), duration);
   }
 
-  // Generate correct URL following the exact pattern from your working example
+  // CORRECTED: Generate URL with 4-digit padding (matching _0000 to _0933 pattern)
   function getImageUrl(zeroIdx) {
-    // Pad to exactly 5 digits (00000 to 00933)
-    const padded = String(zeroIdx).padStart(5, '0');
-    // Construct the full URL matching your working example
-    const filePath = FILE_PREFIX + padded + ".jp2";
-    const url = `${ARCHIVE_URL}?archive=${ARCHIVE_PATH}&file=${filePath}&ext=jpg`;
-    console.log(`Page ${zeroIdx + 1}: ${url}`);
+    // Pad to exactly 4 digits: 0→"0000", 1→"0001", 78→"0078", 933→"0933"
+    const padded = String(zeroIdx).padStart(4, '0');
+    const fileParam = FILE_PATH + padded + ".jp2";
+    const url = `${ARCHIVE_URL}?archive=${ARCHIVE_PATH}&file=${fileParam}&ext=jpg`;
     return url;
   }
 
@@ -564,7 +561,7 @@
     loaderDiv.style.display = 'flex';
     
     const imgUrl = getImageUrl(newIndex);
-    console.log('Loading:', imgUrl);
+    console.log(`Loading page ${newIndex + 1}: ${imgUrl}`);
     
     const tempImg = new Image();
     tempImg.onload = () => {
@@ -573,37 +570,13 @@
       isLoading = false;
       loaderDiv.style.display = 'none';
       preloadNearby(newIndex);
-      showToast(`Page ${newIndex + 1} loaded ✓`, 1000);
     };
     
     tempImg.onerror = (err) => {
-      console.error(`Failed to load index ${newIndex} url: ${imgUrl}`, err);
+      console.error(`Failed to load page ${newIndex + 1}: ${imgUrl}`, err);
       loaderDiv.style.display = 'none';
       isLoading = false;
-      showToast(`⚠️ Failed to load page ${newIndex + 1}. Check console for URL`, 2000);
-      
-      // Try alternative URL format as fallback
-      pendingRetry = setTimeout(() => {
-        if (!isLoading) {
-          console.log('Retrying with alternative URL format...');
-          const altImg = new Image();
-          altImg.onload = () => {
-            imgCache[newIndex] = altImg;
-            applyLoadedImage(altImg, newIndex);
-            isLoading = false;
-            loaderDiv.style.display = 'none';
-            preloadNearby(newIndex);
-            showToast(`Page ${newIndex + 1} loaded ✓`, 1000);
-          };
-          altImg.onerror = () => {
-            console.error('Alternative URL also failed');
-            showToast(`❌ Cannot load page ${newIndex + 1}`, 2000);
-          };
-          // Try without the archive path encoding
-          altImg.src = imgUrl.replace('%2F', '/');
-        }
-        pendingRetry = null;
-      }, 1500);
+      showToast(`⚠️ Failed to load page ${newIndex + 1}`, 2000);
     };
     
     tempImg.src = imgUrl;
@@ -650,7 +623,6 @@
     }
     p = Math.min(TOTAL_PAGES, Math.max(1, p));
     const zeroIdx = p - 1; // Convert 1-based page number to zero-index
-    console.log(`Going to page ${p} (zero index: ${zeroIdx})`);
     loadPageByIndex(zeroIdx);
   }
 
@@ -802,9 +774,6 @@
     gotoInput.max = TOTAL_PAGES;
     gotoInput.min = 1;
     
-    console.log(`Starting at page ${currentIdx + 1}`);
-    console.log(`First page URL: ${getImageUrl(0)}`);
-    
     // Force visibility of goto button on mobile
     if (gotoBtn) {
       gotoBtn.style.setProperty('display', 'inline-flex', 'important');
@@ -815,6 +784,13 @@
       gotoStrip.style.setProperty('display', 'flex', 'important');
       gotoStrip.style.setProperty('visibility', 'visible', 'important');
     }
+    
+    // Test URLs in console
+    console.log('Test URLs:');
+    console.log('Page 1 (index 0):', getImageUrl(0));
+    console.log('Page 2 (index 1):', getImageUrl(1));
+    console.log('Page 78 (index 77):', getImageUrl(77));
+    console.log('Page 934 (index 933):', getImageUrl(933));
     
     // Load the first page
     loadPageByIndex(currentIdx);
