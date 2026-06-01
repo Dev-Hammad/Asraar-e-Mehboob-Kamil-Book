@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>Noorani Reader | Pan & Zoom</title>
+  <title>Noorani Reader | Smooth Pan & Zoom</title>
   <style>
     * {
       margin: 0;
@@ -40,7 +40,6 @@
       gap: 12px;
     }
 
-    /* buttons */
     .icon-btn, .page-nav-btn {
       background: rgba(255, 255, 255, 0.07);
       border: 0.5px solid rgba(255, 255, 255, 0.12);
@@ -90,17 +89,26 @@
       font-variant-numeric: tabular-nums;
     }
 
-    /* ===== SCROLL AREA (PAN ZONE) ===== */
+    /* ===== SCROLL AREA — FULL PAN/ZONE with reliable X/Y ===== */
     #scrollArea {
       flex: 1;
       overflow: auto;
       display: flex;
       align-items: flex-start;
-      justify-content: center;
+      justify-content: flex-start;
       -webkit-overflow-scrolling: touch;
       padding: 20px 16px;
       background: #141210;
       scroll-behavior: smooth;
+      /* ensures content can expand freely */
+    }
+
+    /* Image container wrapper for perfect scroll sizing */
+    .image-wrapper {
+      display: inline-block;
+      min-width: 100%;
+      min-height: 100%;
+      position: relative;
     }
 
     #pageImg {
@@ -113,7 +121,7 @@
       pointer-events: auto;
     }
 
-    /* ===== BOTTOM CONTROLS (subtle & clean) ===== */
+    /* ===== BOTTOM CONTROLS (subtle but functional) ===== */
     #bottomBar {
       display: flex;
       align-items: center;
@@ -165,7 +173,6 @@
       border: 1px solid rgba(255,255,200,0.6);
     }
 
-    /* Goto page area */
     .goto-strip {
       display: flex;
       align-items: center;
@@ -211,7 +218,6 @@
       background: #e5c92e;
     }
 
-    /* mini zoom icons inside zoom strip */
     .zoom-strip .icon-btn {
       width: 32px;
       height: 32px;
@@ -220,7 +226,6 @@
       font-weight: bold;
     }
 
-    /* loader */
     #loader {
       position: fixed;
       top: 50%;
@@ -236,7 +241,7 @@
       display: none;
       align-items: center;
       z-index: 60;
-      border: 0.5px solid rgba(255,215,130,0.3);
+      border: 0.5px solid rgba(245,215,130,0.3);
       font-weight: 500;
     }
     .spin {
@@ -270,7 +275,12 @@
     }
     #toast.show { opacity: 1; }
 
-    /* subtle hint */
+    @keyframes hintFade {
+      0% { opacity: 1; transform: translate(-50%, -50%) scale(0.96); }
+      20% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+      80% { opacity: 1; }
+      100% { opacity: 0; visibility: hidden; }
+    }
     #hint {
       position: fixed;
       top: 50%;
@@ -288,12 +298,6 @@
       white-space: nowrap;
       font-weight: 500;
       animation: hintFade 4s ease forwards;
-    }
-    @keyframes hintFade {
-      0% { opacity: 1; transform: translate(-50%, -50%) scale(0.96); }
-      20% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-      80% { opacity: 1; }
-      100% { opacity: 0; visibility: hidden; }
     }
 
     @media (max-width: 560px) {
@@ -333,14 +337,16 @@
   </div>
 
   <div class="top-right">
-    <button class="icon-btn" id="fitBtn" title="Fit to width / screen">
+    <button class="icon-btn" id="fitBtn" title="Fit to screen">
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="1.5" y="1.5" width="4.5" height="4.5" rx="0.8"/><rect x="10" y="1.5" width="4.5" height="4.5" rx="0.8"/><rect x="1.5" y="10" width="4.5" height="4.5" rx="0.8"/><rect x="10" y="10" width="4.5" height="4.5" rx="0.8"/></svg>
     </button>
   </div>
 </div>
 
 <div id="scrollArea">
-  <img id="pageImg" alt="Noorani page" draggable="false">
+  <div class="image-wrapper" id="imageWrapper">
+    <img id="pageImg" alt="Noorani page" draggable="false">
+  </div>
 </div>
 
 <div id="bottomBar">
@@ -360,21 +366,19 @@
 <div id="toast"></div>
 
 <script>
-  // ================= CONFIGURATION =================
+  // ================= FIXED SCROLL: X & Y AXIS COMPLETE =================
   const ARCHIVE_BASE = "https://ia803205.us.archive.org/view_archive.php?archive=/29/items/Asraar-e-Mehboob-Kamil._20260528/Asraar%20e%20Mehboob%20Kamil.%20%D8%A7%D8%B3%D8%B1%D8%A7%D8%B1%20%D9%85%D8%AD%D8%A8%D9%88%D8%A8%20%DA%A9%D8%A7%D9%85%D9%84_jp2.zip&file=Asraar%20e%20Mehboob%20Kamil.%20%D8%A7%D8%B3%D8%B1%D8%A7%D8%B1%20%D9%85%D8%AD%D8%A8%D9%88%D8%A8%20%DA%A9%D8%A7%D9%85%D9%84_jp2%2FAsraar%20e%20Mehboob%20Kamil.%20%D8%A7%D8%B3%D8%B1%D8%A7%D8%B1%20%D9%85%D8%AD%D8%A8%D9%88%D8%A8%20%DA%A9%D8%A7%D9%85%D9%84_";
   const TOTAL_PAGES = 934;
-  let currentIdx = 0;          // zero-indexed
-  let zoomLevel = 0.48;        // base zoom factor (relative to natural)
+  let currentIdx = 0;
+  let zoomLevel = 0.48;
   let naturalWidth = 0, naturalHeight = 0;
   let isLoading = false;
 
-  // cache object & preload management
+  // Cache & DOM
   const imgCache = {};
-  let pendingPreload = new Set();
-
-  // DOM elements
   const scrollContainer = document.getElementById('scrollArea');
   const pageImg = document.getElementById('pageImg');
+  const imageWrapper = document.getElementById('imageWrapper');
   const loaderDiv = document.getElementById('loader');
   const toastDiv = document.getElementById('toast');
   const zoomSlider = document.getElementById('zoomSlider');
@@ -390,8 +394,6 @@
   const gotoBtn = document.getElementById('gotoBtn');
 
   let toastTimer = null;
-
-  // helper: short toast
   function showToast(msg, duration = 1100) {
     toastDiv.textContent = msg;
     toastDiv.classList.add('show');
@@ -399,169 +401,160 @@
     toastTimer = setTimeout(() => toastDiv.classList.remove('show'), duration);
   }
 
-  // get image URL for page (1-indexed to 0-index mapping)
   function getImageUrl(pageZeroIdx) {
     const pageNumber = pageZeroIdx + 1;
     const padded = String(pageNumber).padStart(4, '0');
     return ARCHIVE_BASE + padded + ".jp2&ext=jpg";
   }
 
-  // update zoom slider & label from zoomLevel
+  // Sync zoom slider & label
   function syncZoomControls() {
-    const minZoom = 0.28;
-    const maxZoom = 3.0;
-    let t = (zoomLevel - minZoom) / (maxZoom - minZoom);
+    const minZ = 0.28, maxZ = 3.4;
+    let t = (zoomLevel - minZ) / (maxZ - minZ);
     t = Math.min(1, Math.max(0, t));
     zoomSlider.value = Math.round(t * 100);
     zoomLabel.textContent = Math.round(zoomLevel * 100) + '%';
   }
 
-  // apply current zoom to image element (preserving dimensions)
-  function applyZoomToImage() {
+  // CRITICAL FIX: apply zoom & ensure scroll area dimensions expand correctly
+  // We set image dimensions and also update wrapper min dimensions so that scrollbars reflect full content.
+  function applyZoomAndUpdateScroll() {
     if (!naturalWidth || !naturalHeight) return;
-    pageImg.style.width = (naturalWidth * zoomLevel) + 'px';
-    pageImg.style.height = (naturalHeight * zoomLevel) + 'px';
+    const newWidth = naturalWidth * zoomLevel;
+    const newHeight = naturalHeight * zoomLevel;
+    pageImg.style.width = newWidth + 'px';
+    pageImg.style.height = newHeight + 'px';
+    
+    // Force wrapper to match image size exactly so scrollArea gets correct scrollWidth/Height
+    imageWrapper.style.width = newWidth + 'px';
+    imageWrapper.style.height = newHeight + 'px';
+    imageWrapper.style.display = 'block';
+    
     syncZoomControls();
-    // persist zoom preference
     try { localStorage.setItem('noorani_zoom', zoomLevel); } catch(e) {}
   }
 
-  // best fit: fill visible area without overflow (respect margins)
+  // Fit to screen: calculates ideal zoom and also resets scroll position
   function calculateFitZoom() {
     if (!naturalWidth || !naturalHeight) return 0.48;
     const containerRect = scrollContainer.getBoundingClientRect();
-    const availableWidth = containerRect.width - 30;   // comfortable padding
+    const availableWidth = containerRect.width - 28;
     const availableHeight = containerRect.height - 28;
     const fitScale = Math.min(availableWidth / naturalWidth, availableHeight / naturalHeight);
-    return Math.min(2.9, Math.max(0.28, fitScale));
+    return Math.min(3.2, Math.max(0.28, fitScale));
   }
 
-  // fit to screen (preserve scroll reset)
   function fitToScreen() {
     if (!naturalWidth) return;
     const newZoom = calculateFitZoom();
     zoomLevel = newZoom;
-    applyZoomToImage();
-    // reset pan position to top-left after fit
+    applyZoomAndUpdateScroll();
+    // Reset pan position perfectly to top-left (X and Y axis both zero)
     scrollContainer.scrollTop = 0;
     scrollContainer.scrollLeft = 0;
-    showToast("🖼️ Fit to screen", 700);
+    showToast("✓ Fit to screen", 700);
   }
 
-  // zoom in / out with bounds
   function zoomIn() {
     let newZoom = zoomLevel + 0.12;
-    if (newZoom > 3.0) newZoom = 3.0;
+    if (newZoom > 3.4) newZoom = 3.4;
     zoomLevel = newZoom;
-    applyZoomToImage();
+    applyZoomAndUpdateScroll();
     showToast(`${Math.round(zoomLevel*100)}%`, 400);
   }
+  
   function zoomOut() {
     let newZoom = zoomLevel - 0.12;
     if (newZoom < 0.28) newZoom = 0.28;
     zoomLevel = newZoom;
-    applyZoomToImage();
+    applyZoomAndUpdateScroll();
     showToast(`${Math.round(zoomLevel*100)}%`, 400);
   }
 
-  // smart preload adjacent pages (neighbors +2)
-  function preloadNearbyPages(currentPageZero) {
-    const toPreload = [currentPageZero + 1, currentPageZero + 2, currentPageZero - 1, currentPageZero - 2]
-      .filter(p => p >= 0 && p < TOTAL_PAGES);
-    for (let p of toPreload) {
-      if (!imgCache[p] && !pendingPreload.has(p)) {
+  // Preload nearby pages
+  function preloadNearby(current) {
+    const pages = [current+1, current+2, current-1, current-2].filter(p => p>=0 && p<TOTAL_PAGES);
+    for (let p of pages) {
+      if (!imgCache[p]) {
         const img = new Image();
-        pendingPreload.add(p);
-        img.onload = () => {
-          imgCache[p] = img;
-          pendingPreload.delete(p);
-        };
-        img.onerror = () => pendingPreload.delete(p);
+        img.onload = () => { imgCache[p] = img; };
         img.src = getImageUrl(p);
       }
     }
-    // clean distant cache (keep last 8)
-    const keys = Object.keys(imgCache).map(Number);
-    for (let k of keys) {
-      if (Math.abs(k - currentPageZero) > 8 && k !== currentPageZero) {
-        delete imgCache[k];
-      }
-    }
+    // clean far cache
+    Object.keys(imgCache).forEach(k => {
+      if (Math.abs(parseInt(k) - current) > 7 && parseInt(k) !== current) delete imgCache[k];
+    });
   }
 
-  // core page loader
+  // Core loader with retry & cache
   function loadPageByIndex(newIndex) {
     if (newIndex < 0 || newIndex >= TOTAL_PAGES) {
-      if (newIndex < 0) showToast("📖 First page reached", 900);
-      else showToast("📘 Last page reached", 900);
+      showToast(newIndex < 0 ? "📖 First page" : "📘 Last page", 900);
       return;
     }
-    if (isLoading) {
-      showToast("Loading in progress...", 500);
-      return;
-    }
-
-    // if already cached and ready
+    if (isLoading) { showToast("Please wait...", 500); return; }
+    
+    // If cached and ready
     if (imgCache[newIndex] && imgCache[newIndex].complete && imgCache[newIndex].naturalWidth > 0) {
-      const cachedImg = imgCache[newIndex];
-      applyLoadedImage(cachedImg, newIndex);
+      const cached = imgCache[newIndex];
+      applyLoadedImage(cached, newIndex);
       return;
     }
-
+    
     isLoading = true;
     loaderDiv.style.display = 'flex';
     const tempImg = new Image();
     tempImg.onload = () => {
-      // store in cache
       imgCache[newIndex] = tempImg;
       applyLoadedImage(tempImg, newIndex);
       isLoading = false;
       loaderDiv.style.display = 'none';
-      preloadNearbyPages(newIndex);
+      preloadNearby(newIndex);
     };
     tempImg.onerror = () => {
       loaderDiv.style.display = 'none';
       isLoading = false;
-      showToast("⚠️ Could not load page. Retrying...", 1500);
-      setTimeout(() => loadPageByIndex(newIndex), 600);
+      showToast("⚠️ Load error, retrying...", 1200);
+      setTimeout(() => loadPageByIndex(newIndex), 700);
     };
     tempImg.src = getImageUrl(newIndex);
   }
 
   function applyLoadedImage(img, idx) {
     if (!img.naturalWidth) {
-      showToast("Image decoding error", 1000);
+      showToast("Decoding failed", 1000);
       return;
     }
-    // set natural dimensions
     naturalWidth = img.naturalWidth;
     naturalHeight = img.naturalHeight;
     pageImg.src = img.src;
     currentIdx = idx;
-    // update UI page info
     pageNumSpan.textContent = currentIdx + 1;
     gotoInput.value = currentIdx + 1;
-    // apply current zoom (preserve global zoom)
-    applyZoomToImage();
-    // reset scroll position for good UX (no weird offset)
-    scrollContainer.scrollTop = 0;
+    
+    // Apply current zoom level (must enforce correct wrapper + image sizes)
+    applyZoomAndUpdateScroll();
+    
+    // CRITICAL: Reset scroll exactly to origin after page change (X=0, Y=0)
     scrollContainer.scrollLeft = 0;
-    // save current page to localStorage
+    scrollContainer.scrollTop = 0;
+    
+    // Save current page
     try { localStorage.setItem('noorani_last_page', currentIdx); } catch(e) {}
-    // preload neighbors
-    preloadNearbyPages(currentIdx);
-    // optional hint only first time
-    if (!localStorage.getItem('nr_pan_hint')) {
-      localStorage.setItem('nr_pan_hint', '1');
+    preloadNearby(currentIdx);
+    
+    // one-time hint for panning
+    if (!localStorage.getItem('nr_pan_hint_v2')) {
+      localStorage.setItem('nr_pan_hint_v2', '1');
       const hintDiv = document.createElement('div');
       hintDiv.id = 'hint';
-      hintDiv.textContent = '✨ Drag to pan · Pinch to zoom ✨';
+      hintDiv.textContent = '🖱️ Drag or touch to pan X/Y · Pinch to zoom 🖱️';
       document.body.appendChild(hintDiv);
-      setTimeout(() => hintDiv.remove(), 4000);
+      setTimeout(() => hintDiv.remove(), 4200);
     }
   }
 
-  // public goto (1-indexed)
   function goToPage(pageNum) {
     let p = parseInt(pageNum);
     if (isNaN(p)) { showToast(`Enter 1–${TOTAL_PAGES}`); return; }
@@ -569,29 +562,64 @@
     loadPageByIndex(p - 1);
   }
 
-  // event listeners
-  prevBtn.addEventListener('click', () => loadPageByIndex(currentIdx - 1));
-  nextBtn.addEventListener('click', () => loadPageByIndex(currentIdx + 1));
-  fitBtn.addEventListener('click', fitToScreen);
-  zoomInBtn.addEventListener('click', zoomIn);
-  zoomOutBtn.addEventListener('click', zoomOut);
-  gotoBtn.addEventListener('click', () => goToPage(gotoInput.value));
-  gotoInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') goToPage(gotoInput.value); });
-
-  // zoom slider
+  // ========== ENSURE THAT X AND Y SCROLLING ALWAYS WORKS AFTER ZOOM ==========
+  // We use a ResizeObserver to make sure scroll dimensions are recalculated if needed
+  // but applying width/height to wrapper directly triggers browser layout.
+  // Also, on zoom slider changes, we reapply and scrollbars update automatically.
+  // Additionally, we attach an event to re-sync wrapper on any image load.
+  
+  // Extra insurance: after image loads fully, recalc wrapper dimensions once more.
+  pageImg.addEventListener('load', () => {
+    if (naturalWidth && naturalHeight) {
+      applyZoomAndUpdateScroll();
+    }
+  });
+  
+  // For zoom slider:
   zoomSlider.addEventListener('input', (e) => {
-    const minZ = 0.28, maxZ = 3.0;
+    const minZ = 0.28, maxZ = 3.4;
     const t = e.target.value / 100;
     zoomLevel = minZ + t * (maxZ - minZ);
-    applyZoomToImage();
+    applyZoomAndUpdateScroll();
+    // No automatic reset of scroll position to keep current view, user can pan.
   });
-
-  // ========== X & Y AXIS SCROLLING FUNCTIONALITY (already via overflow) ==========
-  // The scrollArea provides both horizontal and vertical scrolling naturally (touch, mouse drag, trackpad)
-  // But to enhance visibility: we also ensure that keyboard arrows shift the view when image is zoomed
-  // Also optional shift + wheel for horizontal scrolling is native. Provide helper for smooth pan awareness.
   
-  // Additional: enhance scroll with Shift + mousewheel for horizontal pan.
+  // ========== KEYBOARD PAN & PAGE TURN ==========
+  document.addEventListener('keydown', (e) => {
+    if (document.activeElement?.tagName === 'INPUT') return;
+    const key = e.key;
+    // Pan X/Y via arrow keys (complete X and Y axis)
+    if (key === 'ArrowLeft') {
+      e.preventDefault();
+      scrollContainer.scrollBy({ left: -90, behavior: 'smooth' });
+    } else if (key === 'ArrowRight') {
+      e.preventDefault();
+      scrollContainer.scrollBy({ left: 90, behavior: 'smooth' });
+    } else if (key === 'ArrowUp') {
+      e.preventDefault();
+      scrollContainer.scrollBy({ top: -90, behavior: 'smooth' });
+    } else if (key === 'ArrowDown') {
+      e.preventDefault();
+      scrollContainer.scrollBy({ top: 90, behavior: 'smooth' });
+    } else if (key === '+' || key === '=') {
+      e.preventDefault();
+      zoomIn();
+    } else if (key === '-') {
+      e.preventDefault();
+      zoomOut();
+    } else if (key === 'f' || key === 'F') {
+      e.preventDefault();
+      fitToScreen();
+    } else if (key === 'PageDown') {
+      e.preventDefault();
+      loadPageByIndex(currentIdx + 1);
+    } else if (key === 'PageUp') {
+      e.preventDefault();
+      loadPageByIndex(currentIdx - 1);
+    }
+  });
+  
+  // Mouse wheel with shift for horizontal pan (X axis)
   scrollContainer.addEventListener('wheel', (e) => {
     if (e.shiftKey) {
       e.preventDefault();
@@ -602,73 +630,58 @@
     }
   }, { passive: false });
   
-  // Arrow keys panning (if image is bigger than viewport) – for better accessibility
-  document.addEventListener('keydown', (e) => {
-    if (document.activeElement?.tagName === 'INPUT') return;
-    const target = e.key;
-    const stepX = 80;
-    const stepY = 80;
-    if (target === 'ArrowLeft') {
-      e.preventDefault();
-      scrollContainer.scrollBy({ left: -stepX, behavior: 'smooth' });
-    } else if (target === 'ArrowRight') {
-      e.preventDefault();
-      scrollContainer.scrollBy({ left: stepX, behavior: 'smooth' });
-    } else if (target === 'ArrowUp') {
-      e.preventDefault();
-      scrollContainer.scrollBy({ top: -stepY, behavior: 'smooth' });
-    } else if (target === 'ArrowDown') {
-      e.preventDefault();
-      scrollContainer.scrollBy({ top: stepY, behavior: 'smooth' });
-    } else if (target === '+' || target === '=') {
-      e.preventDefault();
-      zoomIn();
-    } else if (target === '-') {
-      e.preventDefault();
-      zoomOut();
-    } else if (target === 'f' || target === 'F') {
-      e.preventDefault();
-      fitToScreen();
-    }
-  });
-  
-  // Pinch to zoom gesture on the scroll area (two-finger)
-  let initialPinchDist = 0;
-  let initialZoom = zoomLevel;
+  // Two-finger pinch for zoom (touch)
+  let initialPinch = 0;
+  let startZoom = zoomLevel;
   scrollContainer.addEventListener('touchstart', (e) => {
     if (e.touches.length === 2) {
       e.preventDefault();
       const dx = e.touches[0].clientX - e.touches[1].clientX;
       const dy = e.touches[0].clientY - e.touches[1].clientY;
-      initialPinchDist = Math.hypot(dx, dy);
-      initialZoom = zoomLevel;
+      initialPinch = Math.hypot(dx, dy);
+      startZoom = zoomLevel;
     }
   }, { passive: false });
   
   scrollContainer.addEventListener('touchmove', (e) => {
-    if (e.touches.length === 2 && initialPinchDist > 5) {
+    if (e.touches.length === 2 && initialPinch > 5) {
       e.preventDefault();
       const dx = e.touches[0].clientX - e.touches[1].clientX;
       const dy = e.touches[0].clientY - e.touches[1].clientY;
       const newDist = Math.hypot(dx, dy);
-      if (newDist > 0) {
-        let scaleFactor = newDist / initialPinchDist;
-        let newZoom = initialZoom * scaleFactor;
-        newZoom = Math.min(3.0, Math.max(0.28, newZoom));
-        if (Math.abs(newZoom - zoomLevel) > 0.01) {
-          zoomLevel = newZoom;
-          applyZoomToImage();
-        }
+      const ratio = newDist / initialPinch;
+      let newZoom = startZoom * ratio;
+      newZoom = Math.min(3.4, Math.max(0.28, newZoom));
+      if (Math.abs(newZoom - zoomLevel) > 0.01) {
+        zoomLevel = newZoom;
+        applyZoomAndUpdateScroll();
       }
     }
   }, { passive: false });
   
-  scrollContainer.addEventListener('touchend', () => {
-    initialPinchDist = 0;
+  scrollContainer.addEventListener('touchend', () => { initialPinch = 0; });
+  
+  // Also, to guarantee that wrapper dimensions always sync after dynamic updates, call applyZoom whenever needed
+  // Additionally, when the window resizes we ensure fit is not forced but we keep zoom, yet scroll remains functional.
+  window.addEventListener('resize', () => {
+    if (naturalWidth) {
+      // keep current zoom, but if image is too small no side effects
+      // just to be safe, ensure wrapper dimensions reflect current zoom
+      applyZoomAndUpdateScroll();
+    }
   });
-
-  // restore user settings
-  function initSettings() {
+  
+  // ====== EVENT LISTENERS FOR BUTTONS ======
+  prevBtn.addEventListener('click', () => loadPageByIndex(currentIdx - 1));
+  nextBtn.addEventListener('click', () => loadPageByIndex(currentIdx + 1));
+  fitBtn.addEventListener('click', fitToScreen);
+  zoomInBtn.addEventListener('click', zoomIn);
+  zoomOutBtn.addEventListener('click', zoomOut);
+  gotoBtn.addEventListener('click', () => goToPage(gotoInput.value));
+  gotoInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') goToPage(gotoInput.value); });
+  
+  // ====== INITIAL SETUP WITH PERSISTENCE ======
+  function init() {
     totalSpan.textContent = TOTAL_PAGES;
     try {
       const savedPage = localStorage.getItem('noorani_last_page');
@@ -679,22 +692,13 @@
       const savedZoom = localStorage.getItem('noorani_zoom');
       if (savedZoom !== null && !isNaN(parseFloat(savedZoom))) {
         let z = parseFloat(savedZoom);
-        if (z >= 0.28 && z <= 3.0) zoomLevel = z;
+        if (z >= 0.28 && z <= 3.4) zoomLevel = z;
       }
     } catch(e) {}
-    // start loading initial page
     loadPageByIndex(currentIdx);
   }
-
-  // optional small fix: make zoom slider reflect after fit
-  window.addEventListener('resize', () => {
-    if (naturalWidth) {
-      // If currently fit would cause changes? but we only fit on demand, not automatically.
-      // do nothing automatic unless user triggers.
-    }
-  });
   
-  initSettings();
+  init();
 </script>
 </body>
 </html>
