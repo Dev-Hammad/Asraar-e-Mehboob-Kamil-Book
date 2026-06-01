@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Noorani Reader | Fluid Book Viewer</title>
+    <title>Noorani Reader | Full Scroll Viewer</title>
     <style>
         * {
             margin: 0;
@@ -21,7 +21,7 @@
             height: 100%;
         }
 
-        /* Scrollable container - enables BOTH X and Y scrolling */
+        /* Scroll container - enables full X+Y scrolling */
         .scroll-container {
             width: 100%;
             height: 100%;
@@ -29,19 +29,22 @@
             -webkit-overflow-scrolling: touch;
             background: #f0ebe2;
             position: relative;
-            scroll-behavior: smooth;
-            padding-bottom: 80px;
         }
 
-        /* Image wrapper - allows content to be larger than viewport */
+        /* Image wrapper - MUST grow with image size for full scrolling */
         .image-wrapper {
+            display: inline-block;
+            background: #f0ebe2;
+            padding: 20px;
+            min-width: 100%;
+            min-height: 100%;
+        }
+
+        /* Image wrapper inner - ensures proper sizing */
+        .image-inner {
             display: flex;
             justify-content: center;
             align-items: flex-start;
-            background: #f0ebe2;
-            padding: 20px 16px 30px 16px;
-            min-width: 100%;
-            min-height: 100%;
         }
 
         #pageImage {
@@ -50,13 +53,11 @@
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.02);
             border-radius: 4px;
             background: #fffef8;
-            transition: width 0.1s ease-out, height 0.1s ease-out;
+            transition: width 0.08s ease-out, height 0.08s ease-out;
             will-change: width, height;
-            /* Allow image to be larger than container for zooming */
-            flex-shrink: 0;
         }
 
-        /* === CLEAN, MINIMAL CONTROLS === */
+        /* === CLEAN CONTROLS === */
         .controls {
             position: fixed;
             bottom: 0;
@@ -274,7 +275,7 @@
             backdrop-filter: blur(12px);
         }
 
-        /* Swipe areas for page turning - adjusted to not block scrolling */
+        /* Swipe areas for page turning */
         .swipe-area {
             position: fixed;
             top: 0;
@@ -282,36 +283,9 @@
             width: 12%;
             z-index: 900;
             background: transparent;
-            touch-action: pan-y pinch-zoom;
         }
         .swipe-left { left: 0; }
         .swipe-right { right: 0; }
-
-        /* Scroll hint indicator */
-        .scroll-hint {
-            position: fixed;
-            top: 50%;
-            left: 8px;
-            right: 8px;
-            transform: translateY(-50%);
-            pointer-events: none;
-            z-index: 800;
-            opacity: 0;
-            transition: opacity 0.3s;
-            display: flex;
-            justify-content: space-between;
-        }
-        .scroll-hint.visible {
-            opacity: 0.4;
-        }
-        .hint-arrow {
-            background: rgba(0,0,0,0.4);
-            color: white;
-            padding: 8px 12px;
-            border-radius: 30px;
-            font-size: 14px;
-            backdrop-filter: blur(4px);
-        }
 
         @media (max-width: 650px) {
             .controls { padding: 10px 12px 18px 12px; }
@@ -323,8 +297,7 @@
             #zoomSlider { width: 90px; }
             .zoom-percent { min-width: 40px; font-size: 11px; padding: 4px 8px; }
             .icon-btn { width: 34px; height: 34px; font-size: 16px; }
-            .scroll-container { padding-bottom: 85px; }
-            .image-wrapper { padding: 16px 12px 20px 12px; }
+            .image-wrapper { padding: 16px 12px; }
         }
 
         @media (max-width: 500px) {
@@ -395,6 +368,7 @@
     
     const $container = $('#scrollContainer');
     const $image = $('#pageImage');
+    const $wrapper = $('#imageWrapper');
     const $slider = $('#zoomSlider');
     const $zoomPercent = $('#zoomPercent');
     const $loader = $('#slimLoader');
@@ -408,56 +382,57 @@
         return ARCHIVE_BASE + pageIdx.toString().padStart(4, '0') + ".jp2&ext=jpg";
     }
     
-    // ========== ZOOM FUNCTIONS ==========
+    // ========== ZOOM FUNCTIONS WITH PROPER SCROLLING ==========
     function applyZoom() {
         if (!naturalW || !naturalH) return;
         
-        const w = naturalW * currentZoom;
-        const h = naturalH * currentZoom;
-        $image.css({ width: w + 'px', height: h + 'px' });
+        const newWidth = naturalW * currentZoom;
+        const newHeight = naturalH * currentZoom;
         
+        // Set image size
+        $image.css({
+            width: newWidth + 'px',
+            height: newHeight + 'px'
+        });
+        
+        // CRITICAL: Update wrapper size to match image for proper scrolling
+        $wrapper.css({
+            width: newWidth + 'px',
+            minWidth: newWidth + 'px',
+            height: newHeight + 'px',
+            minHeight: newHeight + 'px'
+        });
+        
+        // Update slider UI
         const minZ = 0.32, maxZ = 2.8;
         let t = (currentZoom - minZ) / (maxZ - minZ);
         t = Math.min(1, Math.max(0, t));
         $slider.val(Math.round(t * 100));
         $zoomPercent.text(Math.round(currentZoom * 100) + '%');
         saveZoomToLocal();
-        
-        // Show scroll hint briefly after zoom
-        showScrollHint();
-    }
-    
-    function showScrollHint() {
-        let hint = $('.scroll-hint');
-        if (!hint.length) {
-            $('body').append(`
-                <div class="scroll-hint">
-                    <span class="hint-arrow">← Scroll →</span>
-                    <span class="hint-arrow">↑ Scroll ↓</span>
-                </div>
-            `);
-            hint = $('.scroll-hint');
-            setTimeout(() => hint.removeClass('visible'), 2000);
-        }
-        hint.addClass('visible');
-        setTimeout(() => hint.removeClass('visible'), 2000);
     }
     
     function computeFitScale() {
         if (!naturalW) return 0.48;
         const containerW = $container.width();
-        const targetW = containerW - 30;
-        let scale = targetW / naturalW;
-        return Math.min(1.8, Math.max(0.32, scale));
+        const containerH = $container.height();
+        const targetW = containerW - 40;
+        const targetH = containerH - 80;
+        let scaleW = targetW / naturalW;
+        let scaleH = targetH / naturalH;
+        let scale = Math.min(scaleW, scaleH);
+        scale = Math.min(1.8, Math.max(0.32, scale));
+        return scale;
     }
     
     function fitToScreen() {
         if (!naturalW) return;
         currentZoom = computeFitScale();
         applyZoom();
+        // Reset scroll position to top-left after fit
         $container.scrollLeft(0);
         $container.scrollTop(0);
-        showToast("Fit to screen", 800);
+        showToast("✓ Fit to screen", 800);
     }
     
     function zoomIn() {
@@ -553,9 +528,16 @@
         saveCurrentPageToLocal();
         
         currentZoom = Math.min(2.8, Math.max(0.32, currentZoom));
-        const w = naturalW * currentZoom;
-        const h = naturalH * currentZoom;
-        $image.css({ width: w + 'px', height: h + 'px' });
+        const newWidth = naturalW * currentZoom;
+        const newHeight = naturalH * currentZoom;
+        
+        $image.css({ width: newWidth + 'px', height: newHeight + 'px' });
+        $wrapper.css({
+            width: newWidth + 'px',
+            minWidth: newWidth + 'px',
+            height: newHeight + 'px',
+            minHeight: newHeight + 'px'
+        });
         
         const minZ = 0.32, maxZ = 2.8;
         let t = (currentZoom - minZ) / (maxZ - minZ);
@@ -624,7 +606,7 @@
         if (hideControlsTimer) clearTimeout(hideControlsTimer);
     });
     
-    // ========== TOUCH GESTURES (Pinch Zoom) ==========
+    // ========== PINCH ZOOM GESTURE ==========
     let pinchStartDist = 0, pinchStartZoom = 1;
     function getPinchDist(e) {
         if (e.originalEvent?.touches?.length === 2) {
@@ -716,16 +698,24 @@
     $('.swipe-left').on('click', prevPage);
     $('.swipe-right').on('click', nextPage);
     
-    // Handle resize
+    // Handle resize - preserve zoom or refit if needed
     let resizeTimer;
     $(window).on('resize', () => {
         if (resizeTimer) clearTimeout(resizeTimer);
         resizeTimer = setTimeout(() => {
             if (naturalW && naturalH) {
                 const fitScale = computeFitScale();
-                if (Math.abs(currentZoom - fitScale) < 0.12) {
-                    currentZoom = fitScale;
-                    applyZoom();
+                if (Math.abs(currentZoom - fitScale) < 0.12 || currentZoom > 1.5) {
+                    // Don't auto-resize if user is zoomed in significantly
+                    // Just update wrapper if needed
+                    const newWidth = naturalW * currentZoom;
+                    const newHeight = naturalH * currentZoom;
+                    $wrapper.css({
+                        width: newWidth + 'px',
+                        minWidth: newWidth + 'px',
+                        height: newHeight + 'px',
+                        minHeight: newHeight + 'px'
+                    });
                 }
             }
         }, 200);
