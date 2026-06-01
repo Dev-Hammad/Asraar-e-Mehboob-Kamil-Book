@@ -181,7 +181,7 @@
 
     /* Goto page control - ALWAYS VISIBLE & MOBILE FRIENDLY */
     .goto-strip {
-      display: flex;
+      display: flex !important;
       align-items: center;
       gap: 8px;
       background: rgba(0, 0, 0, 0.45);
@@ -191,6 +191,7 @@
       flex-shrink: 0;
       border: 0.5px solid rgba(245, 215, 66, 0.25);
       min-width: fit-content;
+      visibility: visible !important;
     }
     .goto-strip input {
       width: 70px;
@@ -223,6 +224,10 @@
       transition: 0.1s linear;
       letter-spacing: 0.3px;
       white-space: nowrap;
+      display: inline-flex !important;
+      align-items: center;
+      justify-content: center;
+      visibility: visible !important;
     }
     .goto-strip button:active {
       transform: scale(0.95);
@@ -318,7 +323,7 @@
       .page-nav-btn { padding: 0 12px; }
       .zoom-strip { flex: 1; min-width: 120px; }
       .goto-strip input { width: 60px; height: 34px; font-size: 13px; }
-      .goto-strip button { padding: 0 12px; height: 34px; font-size: 12px; display: inline-flex !important; align-items: center; justify-content: center; }
+      .goto-strip button { padding: 0 12px; height: 34px; font-size: 12px; }
       .zoom-label { display: none; }
     }
 
@@ -326,20 +331,9 @@
       #bottomBar { padding: 8px 12px 14px; gap: 8px; }
       .zoom-strip { gap: 6px; }
       .zoom-strip .icon-btn { width: 32px; height: 32px; }
-      .goto-strip { 
-        padding: 3px 6px 3px 10px; 
-        display: flex !important; 
-        visibility: visible !important; 
-      }
+      .goto-strip { padding: 3px 6px 3px 10px; }
       .goto-strip input { width: 55px; height: 32px; }
-      .goto-strip button { 
-        padding: 0 10px; 
-        height: 32px; 
-        display: inline-flex !important; 
-        align-items: center; 
-        justify-content: center; 
-        visibility: visible !important;
-      }
+      .goto-strip button { padding: 0 10px; height: 32px; }
       .page-pill { padding: 0 10px; height: 36px; font-size: 11px; min-width: 75px; }
       .page-pill strong { font-size: 14px; }
       .top-left, .top-right { gap: 6px; }
@@ -348,7 +342,7 @@
 
     @media (max-width: 430px) {
       .goto-strip input { width: 50px; }
-      .goto-strip button { padding: 0 8px; display: inline-flex !important; }
+      .goto-strip button { padding: 0 8px; }
       .zoom-strip { min-width: 100px; }
       #scrollArea { padding: 12px 12px; }
     }
@@ -358,7 +352,7 @@
       .zoom-strip .icon-btn { width: 28px; height: 28px; font-size: 16px; }
       input[type="range"] { min-width: 60px; }
       .goto-strip input { width: 46px; font-size: 12px; }
-      .goto-strip button { padding: 0 6px; font-size: 11px; display: inline-flex !important; }
+      .goto-strip button { padding: 0 6px; font-size: 11px; }
     }
 
     input[type=number]::-webkit-inner-spin-button,
@@ -415,11 +409,15 @@
 <div id="toast"></div>
 
 <script>
-  // ================= FIXED: CORRECT PAGE INDEXING =================
-  // The archive files are zero-padded 5-digit numbers: 
-  // Page 1 → 00000.jp2, Page 2 → 00001.jp2, ..., Page 934 → 00933.jp2
-  // total pages = 934, zero-indexed range: 0 to 933 inclusive.
-  const ARCHIVE_BASE = "https://ia803205.us.archive.org/view_archive.php?archive=/29/items/Asraar-e-Mehboob-Kamil._20260528/Asraar%20e%20Mehboob%20Kamil.%20%D8%A7%D8%B3%D8%B1%D8%A7%D8%B1%20%D9%85%D8%AD%D8%A8%D9%88%D8%A8%20%DA%A9%D8%A7%D9%85%D9%84_jp2.zip&file=Asraar%20e%20Mehboob%20Kamil.%20%D8%A7%D8%B3%D8%B1%D8%A7%D8%B1%20%D9%85%D8%AD%D8%A8%D9%88%D8%A8%20%DA%A9%D8%A7%D9%85%D9%84_jp2%2FAsraar%20e%20Mehboob%20Kamil.%20%D8%A7%D8%B3%D8%B1%D8%A7%D8%B1%20%D9%85%D8%AD%D8%A8%D9%88%D8%A8%20%DA%A9%D8%A7%D9%85%D9%84_";
+  // ================= CORRECTED URL STRUCTURE =================
+  // The correct endpoint pattern from your example:
+  // https://ia803205.us.archive.org/view_archive.php?archive=/29/items/Asraar-e-Mehboob-Kamil._20260528/Asraar%20e%20Mehboob%20Kamil.%20%D8%A7%D8%B3%D8%B1%D8%A7%D8%B1%20%D9%85%D8%AD%D8%A8%D9%88%D8%A8%20%DA%A9%D8%A7%D9%85%D9%84_jp2.zip&file=Asraar%20e%20Mehboob%20Kamil.%20%D8%A7%D8%B3%D8%B1%D8%A7%D8%B1%20%D9%85%D8%AD%D8%A8%D9%88%D8%A8%20%DA%A9%D8%A7%D9%85%D9%84_jp2%2FAsraar%20e%20Mehboob%20Kamil.%20%D8%A7%D8%B3%D8%B1%D8%A7%D8%B1%20%D9%85%D8%AD%D8%A8%D9%88%D8%A8%20%DA%A9%D8%A7%D9%85%D9%84_0078.jp2&ext=jpg
+
+  // Base URL components
+  const ARCHIVE_URL = "https://ia803205.us.archive.org/view_archive.php";
+  const ARCHIVE_PATH = "/29/items/Asraar-e-Mehboob-Kamil._20260528/Asraar%20e%20Mehboob%20Kamil.%20%D8%A7%D8%B3%D8%B1%D8%A7%D8%B1%20%D9%85%D8%AD%D8%A8%D9%88%D8%A8%20%DA%A9%D8%A7%D9%85%D9%84_jp2.zip";
+  const FILE_PREFIX = "Asraar%20e%20Mehboob%20Kamil.%20%D8%A7%D8%B3%D8%B1%D8%A7%D8%B1%20%D9%85%D8%AD%D8%A8%D9%88%D8%A8%20%DA%A9%D8%A7%D9%85%D9%84_jp2%2FAsraar%20e%20Mehboob%20Kamil.%20%D8%A7%D8%B3%D8%B1%D8%A7%D8%B1%20%D9%85%D8%AD%D8%A8%D9%88%D8%A8%20%DA%A9%D8%A7%D9%85%D9%84_";
+  
   const TOTAL_PAGES = 934;
   let currentIdx = 0;        // zero-indexed internal (0 = page 1, 933 = page 934)
   let zoomLevel = 0.48;
@@ -454,11 +452,15 @@
     toastTimer = setTimeout(() => toastDiv.classList.remove('show'), duration);
   }
 
-  // CRITICAL FIX: Generate correct 5-digit padded filename for each page
-  // Page 1 (zeroIdx 0) → "00000", Page 934 (zeroIdx 933) → "00933"
+  // Generate correct URL following the exact pattern from your working example
   function getImageUrl(zeroIdx) {
+    // Pad to exactly 5 digits (00000 to 00933)
     const padded = String(zeroIdx).padStart(5, '0');
-    return ARCHIVE_BASE + padded + ".jp2&ext=jpg";
+    // Construct the full URL matching your working example
+    const filePath = FILE_PREFIX + padded + ".jp2";
+    const url = `${ARCHIVE_URL}?archive=${ARCHIVE_PATH}&file=${filePath}&ext=jpg`;
+    console.log(`Page ${zeroIdx + 1}: ${url}`);
+    return url;
   }
 
   function syncZoomControls() {
@@ -560,6 +562,10 @@
     
     isLoading = true;
     loaderDiv.style.display = 'flex';
+    
+    const imgUrl = getImageUrl(newIndex);
+    console.log('Loading:', imgUrl);
+    
     const tempImg = new Image();
     tempImg.onload = () => {
       imgCache[newIndex] = tempImg;
@@ -567,19 +573,40 @@
       isLoading = false;
       loaderDiv.style.display = 'none';
       preloadNearby(newIndex);
+      showToast(`Page ${newIndex + 1} loaded ✓`, 1000);
     };
+    
     tempImg.onerror = (err) => {
-      console.warn(`Failed to load index ${newIndex} url: ${getImageUrl(newIndex)}`);
+      console.error(`Failed to load index ${newIndex} url: ${imgUrl}`, err);
       loaderDiv.style.display = 'none';
       isLoading = false;
-      showToast(`⚠️ Network error for page ${newIndex+1}. Retrying...`, 1400);
-      // Retry after 1 second
+      showToast(`⚠️ Failed to load page ${newIndex + 1}. Check console for URL`, 2000);
+      
+      // Try alternative URL format as fallback
       pendingRetry = setTimeout(() => {
-        if (!isLoading) loadPageByIndex(newIndex);
+        if (!isLoading) {
+          console.log('Retrying with alternative URL format...');
+          const altImg = new Image();
+          altImg.onload = () => {
+            imgCache[newIndex] = altImg;
+            applyLoadedImage(altImg, newIndex);
+            isLoading = false;
+            loaderDiv.style.display = 'none';
+            preloadNearby(newIndex);
+            showToast(`Page ${newIndex + 1} loaded ✓`, 1000);
+          };
+          altImg.onerror = () => {
+            console.error('Alternative URL also failed');
+            showToast(`❌ Cannot load page ${newIndex + 1}`, 2000);
+          };
+          // Try without the archive path encoding
+          altImg.src = imgUrl.replace('%2F', '/');
+        }
         pendingRetry = null;
-      }, 1000);
+      }, 1500);
     };
-    tempImg.src = getImageUrl(newIndex);
+    
+    tempImg.src = imgUrl;
   }
 
   function applyLoadedImage(img, idx) {
@@ -623,7 +650,7 @@
     }
     p = Math.min(TOTAL_PAGES, Math.max(1, p));
     const zeroIdx = p - 1; // Convert 1-based page number to zero-index
-    console.log(`Going to page ${p}, zero index ${zeroIdx}, URL: ${getImageUrl(zeroIdx)}`);
+    console.log(`Going to page ${p} (zero index: ${zeroIdx})`);
     loadPageByIndex(zeroIdx);
   }
 
@@ -742,7 +769,7 @@
     }
   });
   
-  // INIT with correct first page (index 0 → 00000.jp2 = page 1)
+  // INIT
   function init() {
     totalSpan.textContent = TOTAL_PAGES;
     
@@ -751,14 +778,13 @@
       const savedPage = localStorage.getItem('noorani_last_page_v2');
       if (savedPage !== null && !isNaN(parseInt(savedPage))) {
         let pg = parseInt(savedPage);
-        // Validate the saved page is within range
         if (pg >= 0 && pg < TOTAL_PAGES) {
           currentIdx = pg;
         } else {
-          currentIdx = 0; // Start from page 1 if saved page is invalid
+          currentIdx = 0;
         }
       } else {
-        currentIdx = 0; // Start from page 1 (00000.jp2)
+        currentIdx = 0;
       }
       
       const savedZoom = localStorage.getItem('noorani_zoom_v2');
@@ -771,54 +797,30 @@
       currentIdx = 0;
     }
     
-    // Set initial values for goto input
+    // Set initial values
     gotoInput.value = currentIdx + 1;
     gotoInput.max = TOTAL_PAGES;
     gotoInput.min = 1;
     
-    // Ensure goto button is visible on mobile
-    const gotoBtn = document.getElementById('gotoBtn');
-    if (gotoBtn) {
-      gotoBtn.style.display = 'inline-flex';
-      gotoBtn.style.visibility = 'visible';
-    }
+    console.log(`Starting at page ${currentIdx + 1}`);
+    console.log(`First page URL: ${getImageUrl(0)}`);
     
-    console.log(`Initializing: Page ${currentIdx + 1}, URL: ${getImageUrl(currentIdx)}`);
+    // Force visibility of goto button on mobile
+    if (gotoBtn) {
+      gotoBtn.style.setProperty('display', 'inline-flex', 'important');
+      gotoBtn.style.setProperty('visibility', 'visible', 'important');
+    }
+    const gotoStrip = document.querySelector('.goto-strip');
+    if (gotoStrip) {
+      gotoStrip.style.setProperty('display', 'flex', 'important');
+      gotoStrip.style.setProperty('visibility', 'visible', 'important');
+    }
     
     // Load the first page
     loadPageByIndex(currentIdx);
   }
   
-  // Force visibility of goto button on mobile after DOM loads
-  document.addEventListener('DOMContentLoaded', function() {
-    const gotoBtn = document.getElementById('gotoBtn');
-    const gotoStrip = document.querySelector('.goto-strip');
-    if (gotoBtn) {
-      gotoBtn.style.setProperty('display', 'inline-flex', 'important');
-      gotoBtn.style.setProperty('visibility', 'visible', 'important');
-    }
-    if (gotoStrip) {
-      gotoStrip.style.setProperty('display', 'flex', 'important');
-      gotoStrip.style.setProperty('visibility', 'visible', 'important');
-    }
-  });
-  
-  // Start the app
   init();
-  
-  // Additional check after window loads to ensure goto button is visible
-  window.addEventListener('load', function() {
-    const gotoBtn = document.getElementById('gotoBtn');
-    const gotoStrip = document.querySelector('.goto-strip');
-    if (gotoBtn) {
-      gotoBtn.style.setProperty('display', 'inline-flex', 'important');
-      gotoBtn.style.setProperty('visibility', 'visible', 'important');
-    }
-    if (gotoStrip) {
-      gotoStrip.style.setProperty('display', 'flex', 'important');
-      gotoStrip.style.setProperty('visibility', 'visible', 'important');
-    }
-  });
 </script>
 </body>
 </html>
