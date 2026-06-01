@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Noorani Reader | Elegant Book Viewer</title>
+    <title>Noorani Reader | Fluid Book Viewer</title>
     <style>
         * {
             margin: 0;
@@ -21,12 +21,11 @@
             height: 100%;
         }
 
-        /* Scrollable content - full screen with proper bottom padding */
+        /* Scrollable container - enables BOTH X and Y scrolling */
         .scroll-container {
             width: 100%;
             height: 100%;
-            overflow-y: auto;
-            overflow-x: hidden;
+            overflow: auto;
             -webkit-overflow-scrolling: touch;
             background: #f0ebe2;
             position: relative;
@@ -34,13 +33,15 @@
             padding-bottom: 80px;
         }
 
+        /* Image wrapper - allows content to be larger than viewport */
         .image-wrapper {
             display: flex;
             justify-content: center;
             align-items: flex-start;
-            min-height: 100%;
             background: #f0ebe2;
             padding: 20px 16px 30px 16px;
+            min-width: 100%;
+            min-height: 100%;
         }
 
         #pageImage {
@@ -51,6 +52,8 @@
             background: #fffef8;
             transition: width 0.1s ease-out, height 0.1s ease-out;
             will-change: width, height;
+            /* Allow image to be larger than container for zooming */
+            flex-shrink: 0;
         }
 
         /* === CLEAN, MINIMAL CONTROLS === */
@@ -67,12 +70,10 @@
             transition: transform 0.3s ease;
         }
 
-        /* Auto-hide on scroll - shows again when scrolling stops */
         .controls.hide {
             transform: translateY(100%);
         }
 
-        /* Primary row - main navigation */
         .controls-row {
             display: flex;
             align-items: center;
@@ -82,7 +83,6 @@
             flex-wrap: wrap;
         }
 
-        /* Secondary row - zoom and extras */
         .controls-row-secondary {
             display: flex;
             align-items: center;
@@ -124,7 +124,6 @@
             letter-spacing: 0.5px;
         }
 
-        /* Goto control */
         .goto-wrapper {
             display: inline-flex;
             align-items: center;
@@ -159,7 +158,6 @@
             margin: 0;
         }
 
-        /* Zoom slider compact */
         .zoom-control {
             display: inline-flex;
             align-items: center;
@@ -203,7 +201,6 @@
             color: #ffe3c2;
         }
 
-        /* Small buttons for + - */
         .icon-btn {
             background: rgba(255, 245, 235, 0.15);
             border: none;
@@ -225,7 +222,6 @@
             transform: scale(0.94);
         }
 
-        /* Loading indicator - subtle */
         .loading-slim {
             position: fixed;
             bottom: 100px;
@@ -261,7 +257,6 @@
             50% { opacity: 1; transform: scale(1.2); }
         }
 
-        /* Toast messages */
         .toast-msg {
             position: fixed;
             bottom: 100px;
@@ -279,7 +274,7 @@
             backdrop-filter: blur(12px);
         }
 
-        /* Swipe areas */
+        /* Swipe areas for page turning - adjusted to not block scrolling */
         .swipe-area {
             position: fixed;
             top: 0;
@@ -287,91 +282,62 @@
             width: 12%;
             z-index: 900;
             background: transparent;
+            touch-action: pan-y pinch-zoom;
         }
         .swipe-left { left: 0; }
         .swipe-right { right: 0; }
 
-        /* === RESPONSIVE: MOBILE FIRST, CLEAN === */
+        /* Scroll hint indicator */
+        .scroll-hint {
+            position: fixed;
+            top: 50%;
+            left: 8px;
+            right: 8px;
+            transform: translateY(-50%);
+            pointer-events: none;
+            z-index: 800;
+            opacity: 0;
+            transition: opacity 0.3s;
+            display: flex;
+            justify-content: space-between;
+        }
+        .scroll-hint.visible {
+            opacity: 0.4;
+        }
+        .hint-arrow {
+            background: rgba(0,0,0,0.4);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 30px;
+            font-size: 14px;
+            backdrop-filter: blur(4px);
+        }
+
         @media (max-width: 650px) {
-            .controls {
-                padding: 10px 12px 18px 12px;
-            }
-            .ctrl-btn {
-                padding: 8px 14px;
-                font-size: 13px;
-            }
-            .page-indicator {
-                padding: 8px 14px;
-                font-size: 13px;
-            }
-            .goto-wrapper input {
-                width: 52px;
-                font-size: 13px;
-                padding: 6px 6px;
-            }
-            .goto-wrapper button {
-                padding: 5px 12px;
-                font-size: 12px;
-            }
-            .zoom-control {
-                padding: 4px 12px;
-                gap: 6px;
-            }
-            #zoomSlider {
-                width: 90px;
-            }
-            .zoom-percent {
-                min-width: 40px;
-                font-size: 11px;
-                padding: 4px 8px;
-            }
-            .icon-btn {
-                width: 34px;
-                height: 34px;
-                font-size: 16px;
-            }
-            .scroll-container {
-                padding-bottom: 85px;
-            }
-            .image-wrapper {
-                padding: 16px 12px 20px 12px;
-            }
+            .controls { padding: 10px 12px 18px 12px; }
+            .ctrl-btn { padding: 8px 14px; font-size: 13px; }
+            .page-indicator { padding: 8px 14px; font-size: 13px; }
+            .goto-wrapper input { width: 52px; font-size: 13px; padding: 6px 6px; }
+            .goto-wrapper button { padding: 5px 12px; font-size: 12px; }
+            .zoom-control { padding: 4px 12px; gap: 6px; }
+            #zoomSlider { width: 90px; }
+            .zoom-percent { min-width: 40px; font-size: 11px; padding: 4px 8px; }
+            .icon-btn { width: 34px; height: 34px; font-size: 16px; }
+            .scroll-container { padding-bottom: 85px; }
+            .image-wrapper { padding: 16px 12px 20px 12px; }
         }
 
         @media (max-width: 500px) {
-            .controls-row {
-                gap: 8px;
-                margin-bottom: 10px;
-            }
-            .controls-row-secondary {
-                gap: 8px;
-            }
-            .ctrl-btn {
-                padding: 7px 12px;
-                font-size: 12px;
-            }
-            .page-indicator {
-                padding: 7px 12px;
-                font-size: 12px;
-            }
-            .goto-wrapper input {
-                width: 46px;
-                font-size: 12px;
-            }
-            #zoomSlider {
-                width: 75px;
-            }
-            .zoom-control {
-                padding: 3px 10px;
-            }
-            .icon-btn {
-                width: 32px;
-                height: 32px;
-                font-size: 15px;
-            }
+            .controls-row { gap: 8px; margin-bottom: 10px; }
+            .controls-row-secondary { gap: 8px; }
+            .ctrl-btn { padding: 7px 12px; font-size: 12px; }
+            .page-indicator { padding: 7px 12px; font-size: 12px; }
+            .goto-wrapper input { width: 46px; font-size: 12px; }
+            #zoomSlider { width: 75px; }
+            .zoom-control { padding: 3px 10px; }
+            .icon-btn { width: 32px; height: 32px; font-size: 15px; }
         }
 
-        /* Hide number input spinners */
         input[type=number]::-webkit-inner-spin-button, 
         input[type=number]::-webkit-outer-spin-button {
             opacity: 0.4;
@@ -380,46 +346,37 @@
 </head>
 <body>
 
-<!-- MAIN CONTENT -->
 <div class="scroll-container" id="scrollContainer">
     <div class="image-wrapper" id="imageWrapper">
         <img id="pageImage" alt="Book page" draggable="false">
     </div>
 </div>
 
-<!-- SWIPE AREAS -->
 <div class="swipe-area swipe-left"></div>
 <div class="swipe-area swipe-right"></div>
 
-<!-- CLEAN CONTROLS BAR -->
 <div class="controls" id="controlsBar">
-    <!-- Row 1: Main navigation -->
     <div class="controls-row">
         <button class="ctrl-btn" id="prevBtn">← Prev</button>
         <span class="page-indicator" id="pageInfo">-- / --</span>
         <button class="ctrl-btn" id="nextBtn">Next →</button>
     </div>
-    
-    <!-- Row 2: Goto + Zoom + Fit + +/- -->
     <div class="controls-row-secondary">
         <div class="goto-wrapper">
             <input type="number" id="gotoPageInput" placeholder="Pg" min="1" max="934">
             <button class="ctrl-btn" id="gotoBtn">Go</button>
         </div>
-        
         <div class="zoom-control">
             <span>🔍</span>
             <input type="range" id="zoomSlider" min="0" max="100" value="42" step="1">
             <span id="zoomPercent" class="zoom-percent">42%</span>
         </div>
-        
         <button class="icon-btn" id="fitBtn" title="Fit to screen">⊡</button>
         <button class="icon-btn" id="zoomMinusBtn" title="Zoom out">−</button>
         <button class="icon-btn" id="zoomPlusBtn" title="Zoom in">+</button>
     </div>
 </div>
 
-<!-- LOADING INDICATOR -->
 <div class="loading-slim" id="slimLoader">
     <div class="loading-dot"></div>
     <span>Loading...</span>
@@ -436,7 +393,6 @@
     let isLoading = false;
     let hideControlsTimer = null;
     
-    // DOM elements
     const $container = $('#scrollContainer');
     const $image = $('#pageImage');
     const $slider = $('#zoomSlider');
@@ -446,7 +402,6 @@
     const $gotoInput = $('#gotoPageInput');
     const $controls = $('#controlsBar');
     
-    // Preload cache
     let preloadCache = {};
     
     function getImageUrl(pageIdx) {
@@ -456,6 +411,7 @@
     // ========== ZOOM FUNCTIONS ==========
     function applyZoom() {
         if (!naturalW || !naturalH) return;
+        
         const w = naturalW * currentZoom;
         const h = naturalH * currentZoom;
         $image.css({ width: w + 'px', height: h + 'px' });
@@ -466,6 +422,25 @@
         $slider.val(Math.round(t * 100));
         $zoomPercent.text(Math.round(currentZoom * 100) + '%');
         saveZoomToLocal();
+        
+        // Show scroll hint briefly after zoom
+        showScrollHint();
+    }
+    
+    function showScrollHint() {
+        let hint = $('.scroll-hint');
+        if (!hint.length) {
+            $('body').append(`
+                <div class="scroll-hint">
+                    <span class="hint-arrow">← Scroll →</span>
+                    <span class="hint-arrow">↑ Scroll ↓</span>
+                </div>
+            `);
+            hint = $('.scroll-hint');
+            setTimeout(() => hint.removeClass('visible'), 2000);
+        }
+        hint.addClass('visible');
+        setTimeout(() => hint.removeClass('visible'), 2000);
     }
     
     function computeFitScale() {
@@ -615,7 +590,7 @@
         } catch(e) {}
     }
     
-    // ========== UI HELPERS ==========
+    // ========== NAVIGATION ==========
     function nextPage() { if (currentPage + 1 < TOTAL_PAGES) loadPage(currentPage + 1); else showToast("Final page", 700); }
     function prevPage() { if (currentPage > 0) loadPage(currentPage - 1); else showToast("First page", 700); }
     function goToPage(num) {
@@ -636,19 +611,14 @@
         toastTimer = setTimeout(() => $toast.fadeOut(200), dur);
     }
     
-    // ========== AUTO-HIDE CONTROLS ON SCROLL ==========
+    // ========== AUTO-HIDE CONTROLS ==========
     function resetControlsTimer() {
         $controls.removeClass('hide');
         if (hideControlsTimer) clearTimeout(hideControlsTimer);
-        hideControlsTimer = setTimeout(() => {
-            $controls.addClass('hide');
-        }, 2500);
+        hideControlsTimer = setTimeout(() => $controls.addClass('hide'), 2500);
     }
     
-    $container.on('scroll touchstart touchend', function() {
-        resetControlsTimer();
-    });
-    
+    $container.on('scroll touchstart', function() { resetControlsTimer(); });
     $controls.on('mouseenter touchstart', function() {
         $controls.removeClass('hide');
         if (hideControlsTimer) clearTimeout(hideControlsTimer);
@@ -746,7 +716,7 @@
     $('.swipe-left').on('click', prevPage);
     $('.swipe-right').on('click', nextPage);
     
-    // Handle orientation/resize
+    // Handle resize
     let resizeTimer;
     $(window).on('resize', () => {
         if (resizeTimer) clearTimeout(resizeTimer);
